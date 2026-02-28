@@ -35,6 +35,7 @@ final class TimeDialViewModel: ObservableObject {
     private var inertiaTask: Task<Void, Never>?
     private let minutesPerRevolution = 1_440
     private let minutesPerTick = 10
+    private let rotationToMinutesSign = -1.0
     private var stepAngleDegrees: Double {
         360.0 / (Double(minutesPerRevolution) / Double(minutesPerTick))
     }
@@ -102,7 +103,7 @@ final class TimeDialViewModel: ObservableObject {
     private func applyRotation(_ degrees: Double, updateStep: Bool) {
         rotationDegrees = degrees
         guard updateStep else { return }
-        let minutes = (degrees / 360.0) * Double(minutesPerRevolution)
+        let minutes = rotationToMinutesSign * (degrees / 360.0) * Double(minutesPerRevolution)
         let snappedMinutes = (minutes / Double(minutesPerTick)).rounded() * Double(minutesPerTick)
         dialSteps = Int(snappedMinutes / Double(minutesPerTick))
     }
@@ -144,8 +145,10 @@ final class TimeDialViewModel: ObservableObject {
     }
 
     private func snapToNearestStep() {
-        let targetStep = Int((rotationDegrees / stepAngleDegrees).rounded())
-        let targetRotation = Double(targetStep) * stepAngleDegrees
+        let targetMinutes = rotationToMinutesSign * (rotationDegrees / 360.0) * Double(minutesPerRevolution)
+        let snappedMinutes = (targetMinutes / Double(minutesPerTick)).rounded() * Double(minutesPerTick)
+        let targetStep = Int(snappedMinutes / Double(minutesPerTick))
+        let targetRotation = (Double(targetStep) * stepAngleDegrees) / rotationToMinutesSign
         dialSteps = targetStep
         withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
             applyRotation(targetRotation, updateStep: false)
