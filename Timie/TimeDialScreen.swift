@@ -1,5 +1,26 @@
 import SwiftUI
 import UIKit
+#if DEBUG
+import QuartzCore
+#endif
+
+#if DEBUG
+private final class ThrottledLogger {
+    private var last: CFTimeInterval = 0
+    let minInterval: CFTimeInterval
+
+    init(minInterval: CFTimeInterval = 0.1) {
+        self.minInterval = minInterval
+    }
+
+    func log(_ message: @autoclosure () -> String) {
+        let now = CACurrentMediaTime()
+        guard now - last >= minInterval else { return }
+        last = now
+        print(message())
+    }
+}
+#endif
 
 struct TimeDialScreen: View {
     @StateObject private var viewModel = TimeDialViewModel()
@@ -12,6 +33,9 @@ struct TimeDialScreen: View {
     private let bigTickHaptics = UIImpactFeedbackGenerator(style: .heavy)
     private let zeroTickHaptics = UINotificationFeedbackGenerator()
     private let resetNotificationHaptics = UINotificationFeedbackGenerator()
+    #if DEBUG
+    private static let dialLog = ThrottledLogger(minInterval: 0.15)
+    #endif
 
     private var hapticsEnabled: Bool {
         #if targetEnvironment(simulator)
@@ -47,12 +71,17 @@ struct TimeDialScreen: View {
                         onDragBegan: {
                             viewModel.beginDialDrag()
                             prepareDialHaptics()
+                            debugLog("[DIAL] drag begin")
                         },
                         onDragChanged: { rotation in
                             viewModel.updateDialRotation(rotation)
                         },
                         onDragEnded: { currentRotation, predictedRotation in
                             viewModel.endDialDrag(currentRotation: currentRotation, predictedRotation: predictedRotation)
+                            debugLog(
+                                "[DIAL] drag end current=\(String(format: "%.2f", currentRotation)) " +
+                                "predicted=\(String(format: "%.2f", predictedRotation))"
+                            )
                         }
                     )
                     .position(x: geo.size.width / 2, y: dialOverlayHeight + dialCenterYOffset)
@@ -78,6 +107,18 @@ struct TimeDialScreen: View {
             }
             .onChange(of: viewModel.dialSteps) { _, newStep in
                 guard newStep != lastSnappedOffsetSteps else { return }
+                let tickType: String
+                if newStep == 0 {
+                    tickType = "zero"
+                } else if abs(newStep).isMultiple(of: 6) {
+                    tickType = "big"
+                } else {
+                    tickType = "small"
+                }
+                debugLog(
+                    "[DIAL] snappedStep \(lastSnappedOffsetSteps) -> \(newStep) " +
+                    "kind=\(tickType)"
+                )
                 fireHapticForSnappedStep(newStep)
                 lastSnappedOffsetSteps = newStep
             }
@@ -132,5 +173,11 @@ struct TimeDialScreen: View {
         smallTickHaptics.prepare()
         bigTickHaptics.prepare()
         zeroTickHaptics.prepare()
+    }
+
+    private func debugLog(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        Self.dialLog.log(message())
+        #endif
     }
 }
