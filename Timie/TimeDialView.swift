@@ -16,12 +16,11 @@ struct TimeDialView: View {
     @State private var startRotationDegrees = 0.0
 
     var body: some View {
-        let zeroIndex = 0
-        let progressTicks = Self.progressTickIndices(stepIndex: stepIndex, zeroIndex: zeroIndex)
         let futureProgressColor = Color(red: 232.0 / 255.0, green: 83.0 / 255.0, blue: 52.0 / 255.0)
         let pastProgressColor = Color.black
         let defaultTickColor = Color.black.opacity(0.2)
         let activeCenterTickIndex = Self.activeCenterTickIndex(rotationDegrees: rotationDegrees)
+        let progressTicks = Self.progressTickIndices(stepIndex: stepIndex, centerIndex: activeCenterTickIndex)
 
         ZStack {
             Canvas { context, size in
@@ -131,14 +130,14 @@ struct TimeDialView: View {
         return delta
     }
 
-    private static func progressTickIndices(stepIndex: Int, zeroIndex: Int) -> Set<Int> {
+    private static func progressTickIndices(stepIndex: Int, centerIndex: Int) -> Set<Int> {
         guard stepIndex != 0 else { return [] }
         let cappedMagnitude = min(abs(stepIndex), tickCount - 1)
-        let direction = stepIndex > 0 ? -1 : 1
+        let direction = stepIndex > 0 ? 1 : -1
         var indices = Set<Int>()
 
         for offset in 0...cappedMagnitude {
-            let raw = zeroIndex + direction * offset
+            let raw = centerIndex + direction * offset
             let normalized = ((raw % tickCount) + tickCount) % tickCount
             indices.insert(normalized)
         }
