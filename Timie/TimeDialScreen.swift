@@ -5,7 +5,6 @@ import Combine
 struct TimeDialScreen: View {
     @StateObject private var viewModel = TimeDialViewModel()
     @State private var lastSnappedOffsetSteps = 0
-    @State private var lastHapticFiveMinuteStep = 0
     @State private var isDraggingSessionActive = false
     @State private var dialHeight: CGFloat = 260
 
@@ -17,8 +16,6 @@ struct TimeDialScreen: View {
     private let bigTickHaptics = UIImpactFeedbackGenerator(style: .heavy)
     private let zeroTickHaptics = UINotificationFeedbackGenerator()
     private let resetNotificationHaptics = UINotificationFeedbackGenerator()
-    private let minutesPerRevolution = 1_440.0
-    private let rotationToMinutesSign = -1.0
 
     private var hapticsEnabled: Bool {
         #if targetEnvironment(simulator)
@@ -64,14 +61,13 @@ struct TimeDialScreen: View {
                 prepareDialHaptics()
                 resetNotificationHaptics.prepare()
                 lastSnappedOffsetSteps = viewModel.dialSteps
-                lastHapticFiveMinuteStep = quantizedFiveMinuteStep(from: viewModel.rotationDegrees)
             }
             .onChange(of: viewModel.dialSteps) { _, newStep in
                 guard newStep != lastSnappedOffsetSteps else { return }
                 let tickType: String
                 if newStep == 0 {
                     tickType = "zero"
-                } else if abs(newStep).isMultiple(of: 6) {
+                } else if abs(newStep).isMultiple(of: 12) {
                     tickType = "big"
                 } else {
                     tickType = "small"
@@ -80,13 +76,8 @@ struct TimeDialScreen: View {
                     "[DIAL] snappedStep \(lastSnappedOffsetSteps) -> \(newStep) " +
                     "kind=\(tickType)"
                 )
+                fireHapticForSnappedStep(newStep)
                 lastSnappedOffsetSteps = newStep
-            }
-            .onChange(of: viewModel.rotationDegrees) { _, newRotation in
-                let fiveMinuteStep = quantizedFiveMinuteStep(from: newRotation)
-                guard fiveMinuteStep != lastHapticFiveMinuteStep else { return }
-                fireHapticForFiveMinuteStep(fiveMinuteStep)
-                lastHapticFiveMinuteStep = fiveMinuteStep
             }
         }
         .ignoresSafeArea()
@@ -157,17 +148,16 @@ struct TimeDialScreen: View {
         resetNotificationHaptics.prepare()
     }
 
-    private func fireHapticForFiveMinuteStep(_ fiveMinuteStep: Int) {
+    private func fireHapticForSnappedStep(_ offsetSteps: Int) {
         guard hapticsEnabled else { return }
 
-        if fiveMinuteStep == 0 {
+        if offsetSteps == 0 {
             zeroTickHaptics.notificationOccurred(.success)
             zeroTickHaptics.prepare()
             return
         }
 
-        // 12 * 5 min = 60 min, treat as major boundary.
-        if abs(fiveMinuteStep).isMultiple(of: 12) {
+        if abs(offsetSteps).isMultiple(of: 12) {
             bigTickHaptics.impactOccurred()
             bigTickHaptics.prepare()
             return
@@ -182,12 +172,6 @@ struct TimeDialScreen: View {
         smallTickHaptics.prepare()
         bigTickHaptics.prepare()
         zeroTickHaptics.prepare()
-    }
-
-    private func quantizedFiveMinuteStep(from rotationDegrees: Double) -> Int {
-        let minutes = rotationToMinutesSign * (rotationDegrees / 360.0) * minutesPerRevolution
-        let snappedFiveMinute = (minutes / 5.0).rounded()
-        return Int(snappedFiveMinute)
     }
 
     private func log(_ message: String) {

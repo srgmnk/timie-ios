@@ -37,7 +37,7 @@ final class TimeDialViewModel: ObservableObject {
     private var tickerTask: Task<Void, Never>?
     private var inertiaTask: Task<Void, Never>?
     private let minutesPerRevolution = 1_440
-    private let minutesPerTick = 10
+    private let minutesPerTick = 5
     private let rotationToMinutesSign = -1.0
     private var stepAngleDegrees: Double {
         360.0 / (Double(minutesPerRevolution) / Double(minutesPerTick))

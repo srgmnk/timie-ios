@@ -2,8 +2,9 @@ import SwiftUI
 
 struct TimeDialView: View {
     private static let tickCount = 288
-    private static let majorTickInterval = 2
-    private static let minutesPerStep = 10
+    private static let tenMinuteTickInterval = 2
+    private static let hourTickInterval = 12
+    private static let minutesPerStep = 5
 
     let diameter: CGFloat
     let rotationDegrees: Double
@@ -33,8 +34,9 @@ struct TimeDialView: View {
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
                 let outerRadius = (diameter / 2) - 16
-                let majorLength: CGFloat = 24
-                let minorLength: CGFloat = majorLength / 2
+                let tenMinuteLength: CGFloat = 16
+                let hourLength: CGFloat = 24
+                let fiveMinuteLength: CGFloat = tenMinuteLength / 2
                 let minorWidth: CGFloat = 1
                 let majorWidth: CGFloat = 1
 
@@ -46,8 +48,9 @@ struct TimeDialView: View {
                         tick: tick,
                         center: center,
                         outerRadius: outerRadius,
-                        minorLength: minorLength,
-                        majorLength: majorLength,
+                        fiveMinuteLength: fiveMinuteLength,
+                        tenMinuteLength: tenMinuteLength,
+                        hourLength: hourLength,
                         minorWidth: minorWidth,
                         majorWidth: majorWidth,
                         lineWidth: 1,
@@ -65,8 +68,9 @@ struct TimeDialView: View {
                             tick: tick,
                             center: center,
                             outerRadius: outerRadius,
-                            minorLength: minorLength,
-                            majorLength: majorLength,
+                            fiveMinuteLength: fiveMinuteLength,
+                            tenMinuteLength: tenMinuteLength,
+                            hourLength: hourLength,
                             minorWidth: minorWidth,
                             majorWidth: majorWidth,
                             lineWidth: 2,
@@ -137,8 +141,7 @@ struct TimeDialView: View {
     }
 
     private static func clampedOffsetSteps(_ offsetStepsSigned: Int) -> Int {
-        let maxOffsetSteps = (tickCount - 1) / 2
-        return max(-maxOffsetSteps, min(maxOffsetSteps, offsetStepsSigned))
+        max(-(tickCount - 1), min(tickCount - 1, offsetStepsSigned))
     }
 
     private static func isTickFilled(
@@ -149,13 +152,12 @@ struct TimeDialView: View {
         let clamped = clampedOffsetSteps(offsetStepsSigned)
         guard clamped != 0 else { return false }
         let tickRelIndex = relativeStep(from: centerTickIndex, to: tick)
-        let filledBoundary = clamped * 2 // convert 10-minute steps into 5-minute tick steps
 
-        if filledBoundary > 0 {
-            return tickRelIndex >= 0 && tickRelIndex <= filledBoundary
+        if clamped > 0 {
+            return tickRelIndex >= 0 && tickRelIndex <= clamped
         }
 
-        return tickRelIndex <= 0 && tickRelIndex >= filledBoundary
+        return tickRelIndex <= 0 && tickRelIndex >= clamped
     }
 
     private static func filledTickIndices(centerTickIndex: Int, offsetStepsSigned: Int) -> Set<Int> {
@@ -182,22 +184,31 @@ struct TimeDialView: View {
         tick: Int,
         center: CGPoint,
         outerRadius: CGFloat,
-        minorLength: CGFloat,
-        majorLength: CGFloat,
+        fiveMinuteLength: CGFloat,
+        tenMinuteLength: CGFloat,
+        hourLength: CGFloat,
         minorWidth: CGFloat,
         majorWidth: CGFloat,
         lineWidth: CGFloat,
         degreesPerTick: Double,
         rotationDegrees: Double
     ) -> Path {
-        let isMajor = tick.isMultiple(of: Self.majorTickInterval)
+        let isHourTick = tick.isMultiple(of: Self.hourTickInterval)
+        let isTenMinuteTick = tick.isMultiple(of: Self.tenMinuteTickInterval)
         let angleDegrees = (Double(tick) * degreesPerTick) + rotationDegrees - 90
         let angleRadians = angleDegrees * .pi / 180
         let angle = CGFloat(angleRadians)
         let cosAngle = CGFloat(cos(angleRadians))
         let sinAngle = CGFloat(sin(angleRadians))
-        let length = isMajor ? majorLength : minorLength
-        let _ = isMajor ? majorWidth : minorWidth
+        let length: CGFloat
+        if isHourTick {
+            length = hourLength
+        } else if isTenMinuteTick {
+            length = tenMinuteLength
+        } else {
+            length = fiveMinuteLength
+        }
+        let _ = isHourTick ? majorWidth : minorWidth
         let width = lineWidth
 
         let start = CGPoint(
