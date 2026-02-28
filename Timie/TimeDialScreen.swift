@@ -3,15 +3,15 @@ import UIKit
 
 struct TimeDialScreen: View {
     @StateObject private var viewModel = TimeDialViewModel()
-    @State private var lastHapticStep = 0
-    @State private var lastHapticTime = Date.distantPast
+    @State private var lastSnappedOffsetSteps = 0
 
     private let dialSize: CGFloat = 512
     private let dialCenterYOffset: CGFloat = 125
     private let dialOverlayHeight: CGFloat = 260
-    private let stepHaptics = UISelectionFeedbackGenerator()
+    private let smallTickHaptics = UIImpactFeedbackGenerator(style: .light)
+    private let bigTickHaptics = UIImpactFeedbackGenerator(style: .heavy)
+    private let zeroTickHaptics = UINotificationFeedbackGenerator()
     private let resetNotificationHaptics = UINotificationFeedbackGenerator()
-    private let maxHapticsPerSecond = 20.0
 
     private var hapticsEnabled: Bool {
         #if targetEnvironment(simulator)
@@ -46,7 +46,7 @@ struct TimeDialScreen: View {
                         resetSignal: viewModel.resetSignal,
                         onDragBegan: {
                             viewModel.beginDialDrag()
-                            if hapticsEnabled { stepHaptics.prepare() }
+                            prepareDialHaptics()
                         },
                         onDragChanged: { rotation in
                             viewModel.updateDialRotation(rotation)
@@ -72,26 +72,14 @@ struct TimeDialScreen: View {
                 .allowsHitTesting(true)
             }
             .onAppear {
-                if hapticsEnabled { stepHaptics.prepare() }
+                prepareDialHaptics()
                 resetNotificationHaptics.prepare()
-                lastHapticStep = viewModel.dialSteps
+                lastSnappedOffsetSteps = viewModel.dialSteps
             }
             .onChange(of: viewModel.dialSteps) { _, newStep in
-                guard newStep != lastHapticStep else { return }
-                let now = Date()
-                let minInterval = 1.0 / maxHapticsPerSecond
-                guard now.timeIntervalSince(lastHapticTime) >= minInterval else {
-                    lastHapticStep = newStep
-                    return
-                }
-
-                if hapticsEnabled {
-                    stepHaptics.selectionChanged()
-                }
-
-                lastHapticStep = newStep
-                lastHapticTime = now
-                if hapticsEnabled { stepHaptics.prepare() }
+                guard newStep != lastSnappedOffsetSteps else { return }
+                fireHapticForSnappedStep(newStep)
+                lastSnappedOffsetSteps = newStep
             }
         }
         .ignoresSafeArea()
@@ -118,5 +106,31 @@ struct TimeDialScreen: View {
         }
         resetNotificationHaptics.notificationOccurred(.success)
         resetNotificationHaptics.prepare()
+    }
+
+    private func fireHapticForSnappedStep(_ offsetSteps: Int) {
+        guard hapticsEnabled else { return }
+
+        if offsetSteps == 0 {
+            zeroTickHaptics.notificationOccurred(.success)
+            zeroTickHaptics.prepare()
+            return
+        }
+
+        if abs(offsetSteps).isMultiple(of: 6) {
+            bigTickHaptics.impactOccurred()
+            bigTickHaptics.prepare()
+            return
+        }
+
+        smallTickHaptics.impactOccurred()
+        smallTickHaptics.prepare()
+    }
+
+    private func prepareDialHaptics() {
+        guard hapticsEnabled else { return }
+        smallTickHaptics.prepare()
+        bigTickHaptics.prepare()
+        zeroTickHaptics.prepare()
     }
 }
