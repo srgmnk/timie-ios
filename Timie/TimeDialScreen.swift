@@ -5,17 +5,20 @@ import Combine
 struct TimeDialScreen: View {
     @StateObject private var viewModel = TimeDialViewModel()
     @State private var lastSnappedOffsetSteps = 0
+    @State private var lastHapticFiveMinuteStep = 0
     @State private var isDraggingSessionActive = false
     @State private var dialHeight: CGFloat = 260
 
     private let dialSize: CGFloat = 512
     private let dialCenterYOffset: CGFloat = 125
     private let dialOverlayHeight: CGFloat = 260
-    private let dialExtraBottomClearance: CGFloat = 180
+    private let cityListDesiredBottomGap: CGFloat = 130
     private let smallTickHaptics = UIImpactFeedbackGenerator(style: .light)
     private let bigTickHaptics = UIImpactFeedbackGenerator(style: .heavy)
     private let zeroTickHaptics = UINotificationFeedbackGenerator()
     private let resetNotificationHaptics = UINotificationFeedbackGenerator()
+    private let minutesPerRevolution = 1_440.0
+    private let rotationToMinutesSign = -1.0
 
     private var hapticsEnabled: Bool {
         #if targetEnvironment(simulator)
@@ -35,8 +38,8 @@ struct TimeDialScreen: View {
                     cities: $viewModel.cities,
                     selectedInstant: viewModel.selectedInstant,
                     topSafeAreaInset: geo.safeAreaInsets.top,
-                    // Keep the last card clear of the fixed dial and stop it 180pt above the screen bottom.
-                    bottomContentInset: dialHeight + dialExtraBottomClearance,
+                    // Desired visual stop gap from physical screen bottom.
+                    bottomContentInset: cityListDesiredBottomGap,
                     cardBackgroundColor: Color(red: 0xF7 / 255, green: 0xF7 / 255, blue: 0xF7 / 255)
                 )
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
@@ -61,6 +64,7 @@ struct TimeDialScreen: View {
                 prepareDialHaptics()
                 resetNotificationHaptics.prepare()
                 lastSnappedOffsetSteps = viewModel.dialSteps
+                lastHapticFiveMinuteStep = quantizedFiveMinuteStep(from: viewModel.rotationDegrees)
             }
             .onChange(of: viewModel.dialSteps) { _, newStep in
                 guard newStep != lastSnappedOffsetSteps else { return }
@@ -76,8 +80,13 @@ struct TimeDialScreen: View {
                     "[DIAL] snappedStep \(lastSnappedOffsetSteps) -> \(newStep) " +
                     "kind=\(tickType)"
                 )
-                fireHapticForSnappedStep(newStep)
                 lastSnappedOffsetSteps = newStep
+            }
+            .onChange(of: viewModel.rotationDegrees) { _, newRotation in
+                let fiveMinuteStep = quantizedFiveMinuteStep(from: newRotation)
+                guard fiveMinuteStep != lastHapticFiveMinuteStep else { return }
+                fireHapticForFiveMinuteStep(fiveMinuteStep)
+                lastHapticFiveMinuteStep = fiveMinuteStep
             }
         }
         .ignoresSafeArea()
@@ -148,16 +157,17 @@ struct TimeDialScreen: View {
         resetNotificationHaptics.prepare()
     }
 
-    private func fireHapticForSnappedStep(_ offsetSteps: Int) {
+    private func fireHapticForFiveMinuteStep(_ fiveMinuteStep: Int) {
         guard hapticsEnabled else { return }
 
-        if offsetSteps == 0 {
+        if fiveMinuteStep == 0 {
             zeroTickHaptics.notificationOccurred(.success)
             zeroTickHaptics.prepare()
             return
         }
 
-        if abs(offsetSteps).isMultiple(of: 6) {
+        // 12 * 5 min = 60 min, treat as major boundary.
+        if abs(fiveMinuteStep).isMultiple(of: 12) {
             bigTickHaptics.impactOccurred()
             bigTickHaptics.prepare()
             return
@@ -172,6 +182,12 @@ struct TimeDialScreen: View {
         smallTickHaptics.prepare()
         bigTickHaptics.prepare()
         zeroTickHaptics.prepare()
+    }
+
+    private func quantizedFiveMinuteStep(from rotationDegrees: Double) -> Int {
+        let minutes = rotationToMinutesSign * (rotationDegrees / 360.0) * minutesPerRevolution
+        let snappedFiveMinute = (minutes / 5.0).rounded()
+        return Int(snappedFiveMinute)
     }
 
     private func log(_ message: String) {
@@ -245,6 +261,8 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
 }
 
 private final class CityListReorderViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    private static var didPrintBottomInsetProbe = false
+
     private struct PendingExternalState {
         let cities: [City]
         let selectedInstant: Date
@@ -309,6 +327,11 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         applySectionInsets()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        applySectionInsets()
+    }
+
     func apply(
         cities: [City],
         selectedInstant: Date,
@@ -348,7 +371,35 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     }
 
     private func applySectionInsets() {
-        flowLayout.sectionInset = UIEdgeInsets(top: topInset, left: 16, bottom: bottomInset, right: 16)
+        flowLayout.sectionInset = UIEdgeInsets(top: topInset, left: 16, bottom: 0, right: 16)
+        applyDeterministicBottomInset()
+    }
+
+    private func applyDeterministicBottomInset() {
+        let desiredGap = bottomInset
+        let safeBottom = collectionView.safeAreaInsets.bottom
+        // Keep UIKit automatic safe-area adjustment enabled, so adjusted bottom becomes:
+        // adjusted = contentInset.bottom + safeBottom ~= desiredGap (130pt target).
+        let targetContentInsetBottom = max(0, desiredGap - safeBottom)
+        let epsilon: CGFloat = 0.5
+
+        if abs(collectionView.contentInset.bottom - targetContentInsetBottom) > epsilon {
+            collectionView.contentInset.bottom = targetContentInsetBottom
+        }
+        if abs(collectionView.verticalScrollIndicatorInsets.bottom - targetContentInsetBottom) > epsilon {
+            collectionView.verticalScrollIndicatorInsets.bottom = targetContentInsetBottom
+        }
+
+        #if DEBUG
+        if !Self.didPrintBottomInsetProbe {
+            print(
+                "[SCROLLPROBE] desiredGap=\(desiredGap) safeBottom=\(safeBottom) " +
+                "contentInsetBottom=\(collectionView.contentInset.bottom) " +
+                "adjustedInsetBottom=\(collectionView.adjustedContentInset.bottom)"
+            )
+            Self.didPrintBottomInsetProbe = true
+        }
+        #endif
     }
 
     private func reconfigureVisibleCells() {

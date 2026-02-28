@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct TimeDialView: View {
-    private static let tickCount = 144
-    private static let majorTickInterval = 6
+    private static let tickCount = 288
+    private static let majorTickInterval = 2
     private static let minutesPerStep = 10
 
     let diameter: CGFloat
@@ -33,8 +33,8 @@ struct TimeDialView: View {
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
                 let outerRadius = (diameter / 2) - 16
-                let minorLength: CGFloat = 16
                 let majorLength: CGFloat = 24
+                let minorLength: CGFloat = majorLength / 2
                 let minorWidth: CGFloat = 1
                 let majorWidth: CGFloat = 1
 
@@ -137,7 +137,8 @@ struct TimeDialView: View {
     }
 
     private static func clampedOffsetSteps(_ offsetStepsSigned: Int) -> Int {
-        max(-(tickCount - 1), min(tickCount - 1, offsetStepsSigned))
+        let maxOffsetSteps = (tickCount - 1) / 2
+        return max(-maxOffsetSteps, min(maxOffsetSteps, offsetStepsSigned))
     }
 
     private static func isTickFilled(
@@ -148,12 +149,13 @@ struct TimeDialView: View {
         let clamped = clampedOffsetSteps(offsetStepsSigned)
         guard clamped != 0 else { return false }
         let tickRelIndex = relativeStep(from: centerTickIndex, to: tick)
+        let filledBoundary = clamped * 2 // convert 10-minute steps into 5-minute tick steps
 
-        if clamped > 0 {
-            return tickRelIndex >= 0 && tickRelIndex <= clamped
+        if filledBoundary > 0 {
+            return tickRelIndex >= 0 && tickRelIndex <= filledBoundary
         }
 
-        return tickRelIndex <= 0 && tickRelIndex >= clamped
+        return tickRelIndex <= 0 && tickRelIndex >= filledBoundary
     }
 
     private static func filledTickIndices(centerTickIndex: Int, offsetStepsSigned: Int) -> Set<Int> {
