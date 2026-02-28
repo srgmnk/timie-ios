@@ -28,8 +28,11 @@ final class TimeDialViewModel: ObservableObject {
         didSet { syncDeltaFromDialSteps() }
     }
     @Published var resetSignal = 0
+    @Published var cities: [City] = City.initialList
 
-    let currentCity = City.current
+    var currentCity: City {
+        cities.first ?? .current
+    }
 
     private var tickerTask: Task<Void, Never>?
     private var inertiaTask: Task<Void, Never>?
