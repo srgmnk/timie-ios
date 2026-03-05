@@ -18,13 +18,15 @@ struct DeltaPillView: View {
         HStack(spacing: 2) {
             switch mode {
             case .now:
-                Image(systemName: "arrow.up.circle.fill")
+                Text("Now")
             case .future:
+                Image(systemName: "plus.circle.fill")
                 Text(deltaText)
-                Image(systemName: "arrow.forward.circle.fill")
+                    .monospacedDigit()
             case .past:
-                Image(systemName: "arrow.backward.circle.fill")
+                Image(systemName: "minus.circle.fill")
                 Text(deltaText)
+                    .monospacedDigit()
             }
         }
         .font(.system(size: 16, weight: .semibold))

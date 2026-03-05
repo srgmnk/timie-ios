@@ -8,6 +8,7 @@ struct CityCardView: View {
     let cardBackgroundColor: Color
 
     private let titleColor = Color(red: 0xE8 / 255, green: 0x53 / 255, blue: 0x34 / 255)
+    private let secondaryTextColor = Color.black.opacity(0.2)
 
     private var timeText: String {
         CityTimeFormatter.formatTime(selectedInstant, in: city.timeZone)
@@ -21,22 +22,35 @@ struct CityCardView: View {
         CityTimeFormatter.formatUTCOffsetValue(selectedInstant, in: city.timeZone)
     }
 
-    private var centerBottomText: String {
-        guard !isCurrent else { return "Current" }
-
+    private var deltaDisplay: (isPositive: Bool, text: String)? {
+        guard !isCurrent else { return nil }
         let cityOffsetSeconds = city.timeZone.secondsFromGMT(for: selectedInstant)
         let referenceOffsetSeconds = referenceTimeZone.secondsFromGMT(for: selectedInstant)
         let deltaSeconds = cityOffsetSeconds - referenceOffsetSeconds
-        let sign = deltaSeconds >= 0 ? "+" : "−"
+        let isPositive = deltaSeconds >= 0
         let totalMinutes = abs(deltaSeconds / 60)
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
 
         if minutes == 0 {
-            return "\(sign)\(hours)h"
+            return (isPositive, "\(hours)h")
         }
 
-        return String(format: "%@%d:%02d", sign, hours, minutes)
+        return (isPositive, String(format: "%d:%02d", hours, minutes))
+    }
+
+    private var centerBottomText: String {
+        if isCurrent {
+            return "Current"
+        }
+        return deltaDisplay?.text ?? "0h"
+    }
+
+    private var deltaSymbolName: String {
+        guard let deltaDisplay else { return "" }
+        return deltaDisplay.isPositive
+            ? "plus.arrow.trianglehead.clockwise"
+            : "minus.arrow.trianglehead.counterclockwise"
     }
 
     private var dayNightSymbol: String {
@@ -49,16 +63,23 @@ struct CityCardView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                Text(city.name)
-                    .font(.system(size: 14, weight: .semibold))
-                    .tracking(-0.42)
-                    .foregroundStyle(titleColor)
-                    .padding(.top, 20)
+                HStack(spacing: 4) {
+                    Text(city.name)
+                        .font(.system(size: 14, weight: .semibold))
+                        .tracking(-0.42)
+                        .foregroundStyle(titleColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                .padding(.top, 16)
 
                 Text(timeText)
-                    .font(.system(size: 48, weight: .semibold))
+                    .font(.system(size: 48, weight: .medium))
+                    .monospacedDigit()
+                    .tracking(-1)
                     .foregroundStyle(.black)
                     .padding(.top, 4)
+                    .offset(y: 3)
 
                 Spacer(minLength: 0)
             }
@@ -66,42 +87,64 @@ struct CityCardView: View {
             VStack {
                 Spacer()
 
-                HStack(alignment: .center) {
+                HStack {
                     HStack(spacing: 2) {
-                        Image(systemName: dayNightSymbol)
-                            .font(.system(size: 14, weight: .medium))
-                        Text(dateText)
-                            .font(.system(size: 14, weight: .medium))
-                            .tracking(-0.42)
+                        if isCurrent {
+                            Text(centerBottomText)
+                                .font(.system(size: 14, weight: .regular))
+                                .tracking(-0.42)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.9)
+                        } else {
+                            Image(systemName: deltaSymbolName)
+                                .font(.system(size: 12, weight: .regular))
+                                .offset(y: -0.5)
+                            Text(centerBottomText)
+                                .font(.system(size: 14, weight: .regular))
+                                .tracking(-0.42)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.9)
+                        }
                     }
-                    .foregroundStyle(.black.opacity(0.2))
+                    .foregroundStyle(secondaryTextColor)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        isCurrent
+                            ? "Current"
+                            : ((deltaDisplay?.isPositive == true ? "plus " : "minus ") + centerBottomText.replacingOccurrences(of: ":", with: " hours "))
+                    )
 
-                    Spacer()
+                    Spacer(minLength: 0)
 
                     HStack(spacing: 0) {
                         Text("UTC")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 14, weight: .regular))
                             .tracking(-0.42)
-                            .foregroundStyle(.black.opacity(0.2))
+                            .foregroundStyle(secondaryTextColor)
                         Text(utcOffsetValueText)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 14, weight: .regular))
                             .tracking(-0.42)
-                            .foregroundStyle(.black.opacity(0.5))
+                            .foregroundStyle(secondaryTextColor)
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
             }
 
             VStack {
                 Spacer()
-                Text(centerBottomText)
-                    .font(.system(size: 14, weight: .medium))
-                    .tracking(-0.42)
-                    .foregroundStyle(.black.opacity(0.2))
-                    .padding(.bottom, 20)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .allowsHitTesting(false)
+                HStack(spacing: 2) {
+                    Image(systemName: dayNightSymbol)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(dateText)
+                        .font(.system(size: 14, weight: .medium))
+                        .tracking(-0.42)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                .foregroundStyle(secondaryTextColor)
+                .padding(.bottom, 16)
+                .allowsHitTesting(false)
             }
         }
         .frame(maxWidth: .infinity)
