@@ -333,9 +333,28 @@ private final class CityListReorderViewController: UIViewController, UICollectio
 
     var onCitiesChanged: (([City]) -> Void)?
 
-    private let flowLayout = UICollectionViewFlowLayout()
+    private lazy var collectionViewLayout: UICollectionViewCompositionalLayout = {
+        var listConfiguration = UICollectionLayoutListConfiguration(appearance: .plain)
+        listConfiguration.showsSeparators = false
+        listConfiguration.headerMode = .supplementary
+        listConfiguration.headerTopPadding = 0
+        listConfiguration.backgroundColor = .clear
+        listConfiguration.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
+            self?.trailingSwipeActionsConfiguration(for: indexPath)
+        }
+
+        return UICollectionViewCompositionalLayout { _, layoutEnvironment in
+            let section = NSCollectionLayoutSection.list(
+                using: listConfiguration,
+                layoutEnvironment: layoutEnvironment
+            )
+            section.interGroupSpacing = 8
+            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+            return section
+        }
+    }()
     private lazy var collectionView: UICollectionView = {
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
         collectionView.backgroundColor = .clear
         collectionView.showsVerticalScrollIndicator = false
         collectionView.alwaysBounceVertical = true
@@ -370,14 +389,10 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     private var pendingExternalState: PendingExternalState?
     private var draggedCityID: City.ID?
     private weak var liftedCell: CityListReorderCollectionCell?
+    private let deleteSuccessHaptics = UINotificationFeedbackGenerator()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        flowLayout.scrollDirection = .vertical
-        flowLayout.minimumLineSpacing = 8
-        flowLayout.minimumInteritemSpacing = 0
-        flowLayout.sectionInsetReference = .fromContentInset
 
         view.backgroundColor = .clear
         view.addSubview(collectionView)
@@ -390,6 +405,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         ])
         collectionView.addGestureRecognizer(longPressGestureRecognizer)
         applySectionInsets()
+        deleteSuccessHaptics.prepare()
     }
 
     override func viewDidLayoutSubviews() {
@@ -423,7 +439,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             self.topInset = topInset
             self.bottomInset = bottomInset
             applySectionInsets()
-            flowLayout.invalidateLayout()
+            collectionView.collectionViewLayout.invalidateLayout()
         }
 
         if citiesLocal != cities {
@@ -436,7 +452,6 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     }
 
     private func applySectionInsets() {
-        flowLayout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         applyDeterministicBottomInset()
     }
 
@@ -449,10 +464,20 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         let epsilon: CGFloat = 0.5
 
         if abs(collectionView.contentInset.bottom - targetContentInsetBottom) > epsilon {
-            collectionView.contentInset.bottom = targetContentInsetBottom
+            collectionView.contentInset = UIEdgeInsets(
+                top: collectionView.contentInset.top,
+                left: collectionView.contentInset.left,
+                bottom: targetContentInsetBottom,
+                right: collectionView.contentInset.right
+            )
         }
         if abs(collectionView.verticalScrollIndicatorInsets.bottom - targetContentInsetBottom) > epsilon {
-            collectionView.verticalScrollIndicatorInsets.bottom = targetContentInsetBottom
+            collectionView.verticalScrollIndicatorInsets = UIEdgeInsets(
+                top: collectionView.verticalScrollIndicatorInsets.top,
+                left: collectionView.verticalScrollIndicatorInsets.left,
+                bottom: targetContentInsetBottom,
+                right: collectionView.verticalScrollIndicatorInsets.right
+            )
         }
 
         #if DEBUG
@@ -553,6 +578,56 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             bottomInset: pendingExternalState.bottomInset,
             cardBackgroundColor: pendingExternalState.cardBackgroundColor
         )
+    }
+
+    private func trailingSwipeActionsConfiguration(for indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard !isReordering else { return nil }
+        guard citiesLocal.indices.contains(indexPath.item) else { return nil }
+
+        let renameAction = UIContextualAction(style: .normal, title: nil) { _, _, completion in
+            // TODO: Implement rename flow.
+            completion(true)
+        }
+        renameAction.image = UIImage(systemName: "character.cursor.ibeam")
+        renameAction.backgroundColor = .black
+
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
+            guard let self else {
+                completion(false)
+                return
+            }
+            completion(deleteCity(at: indexPath))
+        }
+        deleteAction.image = UIImage(systemName: "trash.fill")
+        deleteAction.backgroundColor = UIColor(red: 0xE8 / 255, green: 0x53 / 255, blue: 0x34 / 255, alpha: 1)
+
+        // UIKit trailing actions render first item on the far trailing edge.
+        // Order here yields: Rename (near card), Delete (far right).
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, renameAction])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
+    }
+
+    @discardableResult
+    private func deleteCity(at indexPath: IndexPath) -> Bool {
+        guard !isReordering else { return false }
+        guard citiesLocal.indices.contains(indexPath.item) else { return false }
+
+        citiesLocal.remove(at: indexPath.item)
+        let updatedCities = citiesLocal
+
+        collectionView.performBatchUpdates {
+            collectionView.deleteItems(at: [indexPath])
+        } completion: { [weak self] _ in
+            self?.reconfigureVisibleCells()
+        }
+
+        deleteSuccessHaptics.notificationOccurred(.success)
+        deleteSuccessHaptics.prepare()
+        DispatchQueue.main.async { [weak self] in
+            self?.onCitiesChanged?(updatedCities)
+        }
+        return true
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -663,7 +738,8 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         header.configure(
             topInset: topInset,
             logoHeight: Self.logoHeight,
-            logoWidth: Self.logoWidth
+            logoWidth: Self.logoWidth,
+            logoBottomSpacing: Self.logoBottomSpacing
         )
 
         return header
@@ -682,6 +758,7 @@ private final class CityListLogoHeaderView: UICollectionReusableView {
     private var topConstraint: NSLayoutConstraint?
     private var heightConstraint: NSLayoutConstraint?
     private var widthConstraint: NSLayoutConstraint?
+    private var bottomConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -692,16 +769,19 @@ private final class CityListLogoHeaderView: UICollectionReusableView {
         let topConstraint = imageView.topAnchor.constraint(equalTo: topAnchor)
         let heightConstraint = imageView.heightAnchor.constraint(equalToConstant: 15)
         let widthConstraint = imageView.widthAnchor.constraint(equalToConstant: 49)
+        let bottomConstraint = bottomAnchor.constraint(equalTo: imageView.bottomAnchor)
         NSLayoutConstraint.activate([
             topConstraint,
             heightConstraint,
             widthConstraint,
+            bottomConstraint,
             imageView.centerXAnchor.constraint(equalTo: centerXAnchor)
         ])
 
         self.topConstraint = topConstraint
         self.heightConstraint = heightConstraint
         self.widthConstraint = widthConstraint
+        self.bottomConstraint = bottomConstraint
     }
 
     @available(*, unavailable)
@@ -709,10 +789,11 @@ private final class CityListLogoHeaderView: UICollectionReusableView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(topInset: CGFloat, logoHeight: CGFloat, logoWidth: CGFloat) {
+    func configure(topInset: CGFloat, logoHeight: CGFloat, logoWidth: CGFloat, logoBottomSpacing: CGFloat) {
         topConstraint?.constant = topInset
         heightConstraint?.constant = logoHeight
         widthConstraint?.constant = logoWidth
+        bottomConstraint?.constant = logoBottomSpacing
     }
 }
 
