@@ -16,14 +16,21 @@ struct City: Identifiable, Equatable {
     let id: String
     let name: String
     let timeZoneID: String
+    var customName: String?
+
+    var displayName: String {
+        let trimmedCustomName = customName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmedCustomName.isEmpty ? name : trimmedCustomName
+    }
 
     var timeZone: TimeZone {
         TimeZone(identifier: timeZoneID) ?? .current
     }
 
-    init(name: String, timeZoneID: String) {
+    init(name: String, timeZoneID: String, customName: String? = nil) {
         self.name = name
         self.timeZoneID = timeZoneID
         self.id = timeZoneID
+        self.customName = customName
     }
 }

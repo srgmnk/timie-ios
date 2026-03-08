@@ -9,6 +9,7 @@ struct TimeDialScreen: View {
     @State private var isDraggingSessionActive = false
     @State private var dialHeight: CGFloat = 260
     @State private var isAddCitySheetPresented = false
+    @State private var cityBeingRenamed: City?
 
     private let dialSize: CGFloat = 512
     private let dialCenterYOffset: CGFloat = 125
@@ -45,7 +46,8 @@ struct TimeDialScreen: View {
                     topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
                     // Desired visual stop gap from physical screen bottom.
                     bottomContentInset: cityListDesiredBottomGap,
-                    cardBackgroundColor: Color(red: 0xF7 / 255, green: 0xF7 / 255, blue: 0xF7 / 255)
+                    cardBackgroundColor: Color(red: 0xF7 / 255, green: 0xF7 / 255, blue: 0xF7 / 255),
+                    onRenameRequested: presentRenameSheet(for:)
                 )
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
 
@@ -101,6 +103,11 @@ struct TimeDialScreen: View {
                 existingTimeZoneIDs: Set(viewModel.cities.map(\.timeZoneID))
             ) { selectedItem in
                 appendCityIfNeeded(selectedItem)
+            }
+        }
+        .sheet(item: $cityBeingRenamed) { city in
+            ChangeCityNameSheetView(city: city) { customName in
+                applyCustomDisplayName(customName, toCityID: city.id)
             }
         }
     }
@@ -254,6 +261,15 @@ struct TimeDialScreen: View {
         }
         viewModel.cities.append(selectedItem.asCity)
     }
+
+    private func presentRenameSheet(for city: City) {
+        cityBeingRenamed = city
+    }
+
+    private func applyCustomDisplayName(_ customName: String?, toCityID cityID: City.ID) {
+        guard let index = viewModel.cities.firstIndex(where: { $0.id == cityID }) else { return }
+        viewModel.cities[index].customName = customName
+    }
 }
 
 private struct DialOverlayHeightPreferenceKey: PreferenceKey {
@@ -271,6 +287,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
     let topSafeAreaInset: CGFloat
     let bottomContentInset: CGFloat
     let cardBackgroundColor: Color
+    let onRenameRequested: (City) -> Void
 
     final class Coordinator {
         var parent: CityListReorderUIKitView
@@ -295,6 +312,9 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
         controller.onCitiesChanged = { [weak coordinator = context.coordinator] updatedCities in
             coordinator?.publishCities(updatedCities)
         }
+        controller.onRenameRequested = { [weak coordinator = context.coordinator] city in
+            coordinator?.parent.onRenameRequested(city)
+        }
         controller.apply(
             cities: cities,
             selectedInstant: selectedInstant,
@@ -310,6 +330,9 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
         context.coordinator.parent = self
         uiViewController.onCitiesChanged = { [weak coordinator = context.coordinator] updatedCities in
             coordinator?.publishCities(updatedCities)
+        }
+        uiViewController.onRenameRequested = { [weak coordinator = context.coordinator] city in
+            coordinator?.parent.onRenameRequested(city)
         }
         uiViewController.apply(
             cities: cities,
@@ -339,6 +362,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     }
 
     var onCitiesChanged: (([City]) -> Void)?
+    var onRenameRequested: ((City) -> Void)?
 
     private lazy var collectionViewLayout: UICollectionViewCompositionalLayout = {
         var listConfiguration = UICollectionLayoutListConfiguration(appearance: .plain)
@@ -640,8 +664,20 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         guard !isReordering else { return nil }
         guard citiesLocal.indices.contains(indexPath.item) else { return nil }
 
-        let renameAction = UIContextualAction(style: .normal, title: nil) { _, _, completion in
-            // TODO: Implement rename flow.
+        let renameAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            guard let self else {
+                completion(false)
+                return
+            }
+            guard self.citiesLocal.indices.contains(indexPath.item) else {
+                completion(false)
+                return
+            }
+            triggerRenameHaptics()
+            let city = self.citiesLocal[indexPath.item]
+            DispatchQueue.main.async {
+                self.onRenameRequested?(city)
+            }
             completion(true)
         }
         renameAction.image = UIImage(systemName: "character.cursor.ibeam")
@@ -662,6 +698,19 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction, renameAction])
         configuration.performsFirstActionWithFullSwipe = false
         return configuration
+    }
+
+    private func triggerRenameHaptics() {
+        let fire = {
+            let haptics = UIImpactFeedbackGenerator(style: .medium)
+            haptics.impactOccurred()
+        }
+
+        if Thread.isMainThread {
+            fire()
+        } else {
+            DispatchQueue.main.async(execute: fire)
+        }
     }
 
     @discardableResult

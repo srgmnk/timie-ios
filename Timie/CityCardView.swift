@@ -71,7 +71,7 @@ struct CityCardView: View {
                             .foregroundStyle(titleColor)
                     }
 
-                    Text(city.name)
+                    Text(city.displayName)
                         .font(.system(size: 14, weight: .semibold))
                         .tracking(-0.42)
                         .foregroundStyle(titleColor)
