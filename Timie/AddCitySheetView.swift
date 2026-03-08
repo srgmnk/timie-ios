@@ -10,19 +10,74 @@ struct AddCitySheetView: View {
     @State private var results: [CitySearchItem] = []
     @State private var searchTask: Task<Void, Never>?
     @State private var isSearchFieldFocused = false
+    @StateObject private var currentLocationProvider = CurrentLocationCityProvider()
+
+    private struct DisplayResult: Identifiable {
+        let item: CitySearchItem
+        let isCurrentLocation: Bool
+
+        var id: String {
+            "\(isCurrentLocation ? "current-location" : "city-result")-\(item.id)"
+        }
+    }
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var emptyStateTitle: String {
+        "No results for \"\(trimmedQuery)\""
+    }
 
     private var isShowingEmptySearchState: Bool {
-        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && results.isEmpty
+        !trimmedQuery.isEmpty && results.isEmpty
+    }
+
+    private var displayedResults: [DisplayResult] {
+        let mappedResults = results.map { DisplayResult(item: $0, isCurrentLocation: false) }
+
+        guard trimmedQuery.isEmpty, let locationItem = currentLocationProvider.currentCityItem else {
+            return mappedResults
+        }
+
+        var displayed: [DisplayResult] = []
+        displayed.append(DisplayResult(item: locationItem, isCurrentLocation: true))
+
+        var seenTimeZones = Set<String>([locationItem.timeZoneIdentifier])
+        var seenCityCountry = Set<String>([cityCountryKey(for: locationItem)])
+
+        for mapped in mappedResults {
+            if seenTimeZones.contains(mapped.item.timeZoneIdentifier) { continue }
+
+            let cityCountry = cityCountryKey(for: mapped.item)
+            if seenCityCountry.contains(cityCountry) { continue }
+
+            displayed.append(mapped)
+            seenTimeZones.insert(mapped.item.timeZoneIdentifier)
+            seenCityCountry.insert(cityCountry)
+        }
+
+        return displayed
     }
 
     var body: some View {
         let referenceDate = Date()
+        let visibleResults = displayedResults
 
         NavigationStack {
             List {
-                ForEach(Array(results.enumerated()), id: \.element.id) { index, item in
+                ForEach(Array(visibleResults.enumerated()), id: \.element.id) { index, displayResult in
+                    let item = displayResult.item
+                    let isCurrentLocationRow = displayResult.isCurrentLocation
+                    let isAlreadyAdded = existingTimeZoneIDs.contains(item.timeZoneIdentifier)
+
                     Button {
                         searchTask?.cancel()
+                        guard !isAlreadyAdded else {
+                            dismiss()
+                            return
+                        }
+
                         let generator = UINotificationFeedbackGenerator()
                         generator.notificationOccurred(.success)
                         dismiss()
@@ -36,17 +91,19 @@ struct AddCitySheetView: View {
 
                             Spacer(minLength: 8)
 
-                            Text(utcOffsetText(for: item.timeZoneIdentifier, referenceDate: referenceDate))
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundStyle(.primary.opacity(0.3))
-                                .monospacedDigit()
-                                .lineLimit(1)
+                            CitySearchRowLabel(
+                                kind: isCurrentLocationRow
+                                    ? .myLocation
+                                    : (isAlreadyAdded
+                                        ? .added
+                                        : .utc(utcOffsetText(for: item.timeZoneIdentifier, referenceDate: referenceDate)))
+                            )
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 22)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(rowBackground(for: index, total: results.count))
-                        .padding(.bottom, index == results.count - 1 ? 0 : 2)
+                        .background(rowBackground(for: index, total: visibleResults.count))
+                        .padding(.bottom, index == visibleResults.count - 1 ? 0 : 2)
                     }
                     .buttonStyle(.plain)
                     .contentShape(Rectangle())
@@ -61,7 +118,7 @@ struct AddCitySheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .overlay {
                 if isShowingEmptySearchState {
-                    ContentUnavailableView.search(text: query)
+                    AddCityEmptyStateView(title: emptyStateTitle)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -70,12 +127,16 @@ struct AddCitySheetView: View {
         }
         .onAppear {
             performSearch(for: query)
+            currentLocationProvider.requestCurrentCity()
             DispatchQueue.main.async {
                 isSearchFieldFocused = true
             }
         }
         .onChange(of: query) { _, newQuery in
             performSearch(for: newQuery)
+            if newQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                currentLocationProvider.requestCurrentCity()
+            }
         }
         .onDisappear {
             searchTask?.cancel()
@@ -121,7 +182,7 @@ struct AddCitySheetView: View {
 
         let local = CitySearchProvider.shared.localResults(
             matching: query,
-            excluding: existingTimeZoneIDs
+            excluding: []
         )
         results = local
 
@@ -133,7 +194,7 @@ struct AddCitySheetView: View {
             let merged = await CitySearchProvider.shared.fallbackMergedResults(
                 matching: query,
                 localResults: local,
-                excluding: existingTimeZoneIDs
+                excluding: []
             )
 
             guard !Task.isCancelled else { return }
@@ -186,6 +247,124 @@ struct AddCitySheetView: View {
         }
 
         return "UTC\(sign)\(hours):" + String(format: "%02d", minutes)
+    }
+
+    private func cityCountryKey(for item: CitySearchItem) -> String {
+        "\(normalized(item.city))|\(normalized(item.country))"
+    }
+
+    private func normalized(_ value: String) -> String {
+        value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+}
+
+private struct AddCityEmptyStateView: View {
+    let title: String
+
+    private var subtitle: String {
+        "Check the spelling or try new search"
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+
+            Image("AddCityEmptyStateIllustration")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 340, height: 262)
+                .padding(.bottom, -40)
+
+            VStack(spacing: 10) {
+
+                Text(title)
+                    .font(.system(size: 32, weight: .semibold))
+                    .tracking(-0.96)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.black.opacity(0.2))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+
+                Text(subtitle)
+                    .font(.system(size: 14, weight: .medium))
+                    .tracking(-0.42)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.black.opacity(0.2))
+
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 48)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct CitySearchRowLabel: View {
+    enum Kind {
+        case myLocation
+        case added
+        case utc(String)
+    }
+
+    let kind: Kind
+
+    private var text: String {
+        switch kind {
+        case .myLocation:
+            return "My location"
+        case .added:
+            return "Added"
+        case .utc(let offset):
+            return offset
+        }
+    }
+
+    private var textColor: Color {
+        switch kind {
+        case .added:
+            return Color(red: 0x56 / 255, green: 0x82 / 255, blue: 0x22 / 255)
+        case .myLocation, .utc:
+            return Color.black.opacity(0.3)
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch kind {
+        case .added:
+            return Color(red: 0xE8 / 255, green: 0xEC / 255, blue: 0xE3 / 255)
+        case .myLocation, .utc:
+            return .clear
+        }
+    }
+
+    private var borderColor: Color {
+        switch kind {
+        case .added:
+            return .clear
+        case .myLocation, .utc:
+            return Color.black.opacity(0.05)
+        }
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 14, weight: .regular))
+            .tracking(-0.42)
+            .foregroundStyle(textColor)
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(backgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
+            )
     }
 }
 

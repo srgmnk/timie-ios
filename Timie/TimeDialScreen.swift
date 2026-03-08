@@ -4,6 +4,7 @@ import Combine
 
 struct TimeDialScreen: View {
     @StateObject private var viewModel = TimeDialViewModel()
+    @StateObject private var currentLocationProvider = CurrentLocationCityProvider()
     @State private var lastSnappedOffsetSteps = 0
     @State private var isDraggingSessionActive = false
     @State private var dialHeight: CGFloat = 260
@@ -39,6 +40,7 @@ struct TimeDialScreen: View {
                 CityListReorderUIKitView(
                     cities: $viewModel.cities,
                     selectedInstant: viewModel.selectedInstant,
+                    userCurrentLocationItem: currentLocationProvider.currentCityItem,
                     // Keep scroll content layout independent from pinned button offset.
                     topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
                     // Desired visual stop gap from physical screen bottom.
@@ -73,6 +75,7 @@ struct TimeDialScreen: View {
                 prepareDialHaptics()
                 resetNotificationHaptics.prepare()
                 lastSnappedOffsetSteps = viewModel.dialSteps
+                currentLocationProvider.requestCurrentCity()
             }
             .onChange(of: viewModel.dialSteps) { _, newStep in
                 guard newStep != lastSnappedOffsetSteps else { return }
@@ -264,6 +267,7 @@ private struct DialOverlayHeightPreferenceKey: PreferenceKey {
 private struct CityListReorderUIKitView: UIViewControllerRepresentable {
     @Binding var cities: [City]
     let selectedInstant: Date
+    let userCurrentLocationItem: CitySearchItem?
     let topSafeAreaInset: CGFloat
     let bottomContentInset: CGFloat
     let cardBackgroundColor: Color
@@ -294,6 +298,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
         controller.apply(
             cities: cities,
             selectedInstant: selectedInstant,
+            userCurrentLocationItem: userCurrentLocationItem,
             topInset: topSafeAreaInset,
             bottomInset: bottomContentInset,
             cardBackgroundColor: cardBackgroundColor
@@ -309,6 +314,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
         uiViewController.apply(
             cities: cities,
             selectedInstant: selectedInstant,
+            userCurrentLocationItem: userCurrentLocationItem,
             topInset: topSafeAreaInset,
             bottomInset: bottomContentInset,
             cardBackgroundColor: cardBackgroundColor
@@ -326,6 +332,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     private struct PendingExternalState {
         let cities: [City]
         let selectedInstant: Date
+        let userCurrentLocationItem: CitySearchItem?
         let topInset: CGFloat
         let bottomInset: CGFloat
         let cardBackgroundColor: Color
@@ -384,6 +391,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     private var selectedInstant: Date = Date()
     private var topInset: CGFloat = 0
     private var bottomInset: CGFloat = 0
+    private var userCurrentLocationItem: CitySearchItem?
     private var cardBackgroundColor: Color = Color(red: 0xF7 / 255, green: 0xF7 / 255, blue: 0xF7 / 255)
     private var isReordering = false
     private var pendingExternalState: PendingExternalState?
@@ -416,6 +424,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     func apply(
         cities: [City],
         selectedInstant: Date,
+        userCurrentLocationItem: CitySearchItem?,
         topInset: CGFloat,
         bottomInset: CGFloat,
         cardBackgroundColor: Color
@@ -424,6 +433,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             pendingExternalState = PendingExternalState(
                 cities: cities,
                 selectedInstant: selectedInstant,
+                userCurrentLocationItem: userCurrentLocationItem,
                 topInset: topInset,
                 bottomInset: bottomInset,
                 cardBackgroundColor: cardBackgroundColor
@@ -433,6 +443,8 @@ private final class CityListReorderViewController: UIViewController, UICollectio
 
         self.selectedInstant = selectedInstant
         self.cardBackgroundColor = cardBackgroundColor
+        let didCurrentLocationChange = self.userCurrentLocationItem != userCurrentLocationItem
+        self.userCurrentLocationItem = userCurrentLocationItem
 
         let insetsChanged = self.topInset != topInset || self.bottomInset != bottomInset
         if insetsChanged {
@@ -444,6 +456,11 @@ private final class CityListReorderViewController: UIViewController, UICollectio
 
         if citiesLocal != cities {
             citiesLocal = cities
+            collectionView.reloadData()
+            return
+        }
+
+        if didCurrentLocationChange {
             collectionView.reloadData()
             return
         }
@@ -493,6 +510,8 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     }
 
     private func reconfigureVisibleCells() {
+        let matchedCurrentLocationIndex = currentLocationMatchIndex()
+
         for indexPath in collectionView.indexPathsForVisibleItems {
             guard indexPath.item < citiesLocal.count else { continue }
             guard let cell = collectionView.cellForItem(at: indexPath) as? CityListReorderCollectionCell else { continue }
@@ -504,9 +523,45 @@ private final class CityListReorderViewController: UIViewController, UICollectio
                 selectedInstant: selectedInstant,
                 referenceTimeZone: referenceTimeZone,
                 isCurrent: indexPath.item == 0,
+                isUserCurrentLocation: matchedCurrentLocationIndex == indexPath.item,
                 cardBackgroundColor: cardBackgroundColor
             )
         }
+    }
+
+    private func currentLocationMatchIndex() -> Int? {
+        guard let userCurrentLocationItem else { return nil }
+        guard !citiesLocal.isEmpty else { return nil }
+
+        let normalizedCurrentCity = normalized(userCurrentLocationItem.city)
+        let currentTimeZoneID = userCurrentLocationItem.timeZoneIdentifier
+
+        if let exactMatchIndex = citiesLocal.firstIndex(where: {
+            $0.timeZoneID == currentTimeZoneID && normalized($0.name) == normalizedCurrentCity
+        }) {
+            return exactMatchIndex
+        }
+
+        if let timeZoneMatchIndex = citiesLocal.firstIndex(where: {
+            $0.timeZoneID == currentTimeZoneID
+        }) {
+            return timeZoneMatchIndex
+        }
+
+        if let cityNameMatchIndex = citiesLocal.firstIndex(where: {
+            normalized($0.name) == normalizedCurrentCity
+        }) {
+            return cityNameMatchIndex
+        }
+
+        return nil
+    }
+
+    private func normalized(_ input: String) -> String {
+        input
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
     }
 
     @objc
@@ -574,6 +629,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         apply(
             cities: pendingExternalState.cities,
             selectedInstant: pendingExternalState.selectedInstant,
+            userCurrentLocationItem: pendingExternalState.userCurrentLocationItem,
             topInset: pendingExternalState.topInset,
             bottomInset: pendingExternalState.bottomInset,
             cardBackgroundColor: pendingExternalState.cardBackgroundColor
@@ -682,11 +738,13 @@ private final class CityListReorderViewController: UIViewController, UICollectio
 
         let city = citiesLocal[indexPath.item]
         let referenceTimeZone = citiesLocal.first?.timeZone ?? city.timeZone
+        let matchedCurrentLocationIndex = currentLocationMatchIndex()
         cell.configure(
             city: city,
             selectedInstant: selectedInstant,
             referenceTimeZone: referenceTimeZone,
             isCurrent: indexPath.item == 0,
+            isUserCurrentLocation: matchedCurrentLocationIndex == indexPath.item,
             cardBackgroundColor: cardBackgroundColor
         )
         return cell
@@ -821,6 +879,7 @@ private final class CityListReorderCollectionCell: UICollectionViewCell {
         selectedInstant: Date,
         referenceTimeZone: TimeZone,
         isCurrent: Bool,
+        isUserCurrentLocation: Bool,
         cardBackgroundColor: Color
     ) {
         contentConfiguration = UIHostingConfiguration {
@@ -829,6 +888,7 @@ private final class CityListReorderCollectionCell: UICollectionViewCell {
                 selectedInstant: selectedInstant,
                 referenceTimeZone: referenceTimeZone,
                 isCurrent: isCurrent,
+                isUserCurrentLocation: isUserCurrentLocation,
                 cardBackgroundColor: cardBackgroundColor
             )
         }

@@ -100,6 +100,46 @@ final class CitySearchProvider {
         )
     }
 
+    func canonicalItemForCurrentLocation(
+        city: String,
+        country: String,
+        timeZoneIdentifier: String
+    ) -> CitySearchItem? {
+        let normalizedCity = Self.normalize(city)
+        let normalizedCountry = Self.normalize(country)
+        let normalizedTimeZone = Self.normalize(timeZoneIdentifier)
+
+        if let exact = indexedLocalItems.first(where: {
+            $0.normalizedCity == normalizedCity &&
+            $0.normalizedCountry == normalizedCountry &&
+            $0.normalizedTimeZone == normalizedTimeZone
+        }) {
+            return exact.item
+        }
+
+        if let cityAndCountry = indexedLocalItems.first(where: {
+            $0.normalizedCity == normalizedCity &&
+            $0.normalizedCountry == normalizedCountry
+        }) {
+            return cityAndCountry.item
+        }
+
+        if let timeZoneAndCountry = indexedLocalItems.first(where: {
+            $0.normalizedTimeZone == normalizedTimeZone &&
+            $0.normalizedCountry == normalizedCountry
+        }) {
+            return timeZoneAndCountry.item
+        }
+
+        if let timeZoneOnly = indexedLocalItems.first(where: {
+            $0.normalizedTimeZone == normalizedTimeZone
+        }) {
+            return timeZoneOnly.item
+        }
+
+        return nil
+    }
+
     private func mapKitFallbackResults(
         matching query: String,
         excluding existingTimeZoneIDs: Set<String>,

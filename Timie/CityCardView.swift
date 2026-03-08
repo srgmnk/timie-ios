@@ -5,6 +5,7 @@ struct CityCardView: View {
     let selectedInstant: Date
     let referenceTimeZone: TimeZone
     let isCurrent: Bool
+    var isUserCurrentLocation: Bool = false
     let cardBackgroundColor: Color
 
     private let titleColor = Color(red: 0xE8 / 255, green: 0x53 / 255, blue: 0x34 / 255)
@@ -64,6 +65,12 @@ struct CityCardView: View {
         ZStack {
             VStack(spacing: 0) {
                 HStack(spacing: 4) {
+                    if isUserCurrentLocation {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(titleColor)
+                    }
+
                     Text(city.name)
                         .font(.system(size: 14, weight: .semibold))
                         .tracking(-0.42)
