@@ -1,11 +1,17 @@
 import Foundation
 
 enum CityTimeFormatter {
+    struct TimeComponents {
+        let numeric: String
+        let meridiem: String?
+    }
+
     private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "HH:mm"
-        return formatter
+        DateFormatter()
+    }()
+
+    private static let meridiemFormatter: DateFormatter = {
+        DateFormatter()
     }()
 
     private static let dateFormatter: DateFormatter = {
@@ -16,8 +22,32 @@ enum CityTimeFormatter {
     }()
 
     static func formatTime(_ instant: Date, in timeZone: TimeZone) -> String {
+        let components = formatTimeComponents(instant, in: timeZone)
+        if let meridiem = components.meridiem {
+            return "\(components.numeric) \(meridiem)"
+        }
+        return components.numeric
+    }
+
+    static func formatTimeComponents(_ instant: Date, in timeZone: TimeZone) -> TimeComponents {
+        let locale = Locale.autoupdatingCurrent
+        let uses12HourClock = uses12HourClock(for: locale)
+        let resolvedFormat = uses12HourClock ? "hh:mm" : "HH:mm"
+
+        timeFormatter.locale = locale
+        timeFormatter.dateFormat = resolvedFormat
         timeFormatter.timeZone = timeZone
-        return timeFormatter.string(from: instant)
+        let numeric = timeFormatter.string(from: instant)
+
+        guard uses12HourClock else {
+            return TimeComponents(numeric: numeric, meridiem: nil)
+        }
+
+        meridiemFormatter.locale = locale
+        meridiemFormatter.dateFormat = "a"
+        meridiemFormatter.timeZone = timeZone
+        let meridiem = meridiemFormatter.string(from: instant).uppercased(with: locale)
+        return TimeComponents(numeric: numeric, meridiem: meridiem)
     }
 
     static func formatDate(_ instant: Date, in timeZone: TimeZone) -> String {
@@ -40,5 +70,14 @@ enum CityTimeFormatter {
     static func formatUTCOffsetValue(_ instant: Date, in timeZone: TimeZone) -> String {
         let full = formatUTCOffset(instant, in: timeZone)
         return full.replacingOccurrences(of: "UTC", with: "")
+    }
+
+    private static func uses12HourClock(for locale: Locale) -> Bool {
+        let hourTemplate = DateFormatter.dateFormat(
+            fromTemplate: "j",
+            options: 0,
+            locale: locale
+        ) ?? ""
+        return hourTemplate.contains("a")
     }
 }

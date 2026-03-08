@@ -268,7 +268,7 @@ struct TimeDialScreen: View {
 
     private func applyCustomDisplayName(_ customName: String?, toCityID cityID: City.ID) {
         guard let index = viewModel.cities.firstIndex(where: { $0.id == cityID }) else { return }
-        viewModel.cities[index].customName = customName
+        viewModel.cities[index].customDisplayName = customName
     }
 }
 

@@ -17,7 +17,7 @@ struct ChangeCityNameSheetView: View {
     }
 
     private var originalName: String {
-        city.name
+        city.canonicalCity.name
     }
 
     private var trimmedCustomName: String {
@@ -42,7 +42,7 @@ struct ChangeCityNameSheetView: View {
     }
 
     private var hasSavedCustomDisplayName: Bool {
-        !(city.customName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        !(city.customDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
     }
 
     private var shouldShowSaveButton: Bool {

@@ -10,9 +10,11 @@ struct CityCardView: View {
 
     private let titleColor = Color(red: 0xE8 / 255, green: 0x53 / 255, blue: 0x34 / 255)
     private let secondaryTextColor = Color.black.opacity(0.2)
+    private let meridiemLabelXOffset: CGFloat = 66
+    private let meridiemLabelYOffset: CGFloat = 13
 
-    private var timeText: String {
-        CityTimeFormatter.formatTime(selectedInstant, in: city.timeZone)
+    private var timeComponents: CityTimeFormatter.TimeComponents {
+        CityTimeFormatter.formatTimeComponents(selectedInstant, in: city.timeZone)
     }
 
     private var dateText: String {
@@ -80,13 +82,23 @@ struct CityCardView: View {
                 }
                 .padding(.top, 16)
 
-                Text(timeText)
-                    .font(.system(size: 48, weight: .medium))
-                    .monospacedDigit()
-                    .tracking(-1)
-                    .foregroundStyle(.black)
-                    .padding(.top, 4)
-                    .offset(y: 3)
+                ZStack {
+                    Text(timeComponents.numeric)
+                        .font(.system(size: 48, weight: .medium))
+                        .monospacedDigit()
+                        .tracking(-1)
+                        .foregroundStyle(.black)
+
+                    if let meridiem = timeComponents.meridiem {
+                        Text(meridiem)
+                            .font(.system(size: 14, weight: .medium))
+                            .tracking(-0.42)
+                            .foregroundStyle(.black)
+                            .offset(x: meridiemLabelXOffset + 10, y: meridiemLabelYOffset - 1)
+                    }
+                }
+                .padding(.top, 4)
+                .offset(y: 3)
 
                 Spacer(minLength: 0)
             }

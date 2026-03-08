@@ -8,7 +8,7 @@ struct CitySearchItem: Identifiable, Codable, Hashable {
     let aliases: [String]
 
     var asCity: City {
-        City(name: city, timeZoneID: timeZoneIdentifier)
+        City(canonicalCity: CanonicalCity(name: city, timeZoneID: timeZoneIdentifier))
     }
 
     func utcOffsetText(referenceDate: Date = Date()) -> String {
