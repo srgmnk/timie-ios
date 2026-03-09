@@ -116,6 +116,17 @@ struct AddCitySheetView: View {
             .padding(.horizontal, 8)
             .navigationTitle("Add City")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
             .overlay {
                 if isShowingEmptySearchState {
                     AddCityEmptyStateView(title: emptyStateTitle)
@@ -146,35 +157,18 @@ struct AddCitySheetView: View {
 
     private var bottomSearchArea: some View {
         GlassEffectContainer(spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                NativeBottomSearchTextField(
-                    text: $query,
-                    isFocused: $isSearchFieldFocused,
-                    placeholder: "Search"
-                )
-                .frame(height: 52)
-                .glassEffect(.regular, in: Capsule())
-
-                if isSearchFieldFocused {
-                    Button {
-                        searchTask?.cancel()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 20, weight: .regular))
-                            .foregroundStyle(.primary)
-                            .frame(width: 52, height: 52)
-                            .glassEffect(.regular, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
+            NativeBottomSearchTextField(
+                text: $query,
+                isFocused: $isSearchFieldFocused,
+                placeholder: "Search"
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .glassEffect(.regular, in: Capsule())
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .animation(.easeInOut(duration: 0.16), value: isSearchFieldFocused)
     }
 
     private func performSearch(for query: String) {
@@ -208,26 +202,24 @@ struct AddCitySheetView: View {
 
     @ViewBuilder
     private func rowBackground(for index: Int, total: Int) -> some View {
-        let backgroundColor = Color(red: 247.0 / 255.0, green: 247.0 / 255.0, blue: 247.0 / 255.0)
-
         if total <= 1 {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(backgroundColor)
+                .fill(SheetStyle.groupedRowBackground)
         } else if index == 0 {
             UnevenRoundedRectangle(
                 cornerRadii: .init(topLeading: 24, bottomLeading: 0, bottomTrailing: 0, topTrailing: 24),
                 style: .continuous
             )
-            .fill(backgroundColor)
+            .fill(SheetStyle.groupedRowBackground)
         } else if index == total - 1 {
             UnevenRoundedRectangle(
                 cornerRadii: .init(topLeading: 0, bottomLeading: 24, bottomTrailing: 24, topTrailing: 0),
                 style: .continuous
             )
-            .fill(backgroundColor)
+            .fill(SheetStyle.groupedRowBackground)
         } else {
             Rectangle()
-                .fill(backgroundColor)
+                .fill(SheetStyle.groupedRowBackground)
         }
     }
 

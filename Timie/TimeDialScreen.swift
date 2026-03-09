@@ -9,6 +9,7 @@ struct TimeDialScreen: View {
     @State private var isDraggingSessionActive = false
     @State private var dialHeight: CGFloat = 260
     @State private var isAddCitySheetPresented = false
+    @State private var isSettingsSheetPresented = false
     @State private var cityBeingRenamed: City?
 
     private let dialSize: CGFloat = 512
@@ -105,6 +106,9 @@ struct TimeDialScreen: View {
                 appendCityIfNeeded(selectedItem)
             }
         }
+        .sheet(isPresented: $isSettingsSheetPresented) {
+            SettingsSheetView()
+        }
         .sheet(item: $cityBeingRenamed) { city in
             ChangeCityNameSheetView(city: city) { customName in
                 applyCustomDisplayName(customName, toCityID: city.id)
@@ -140,9 +144,11 @@ struct TimeDialScreen: View {
                 Spacer(minLength: 0)
 
                 Button(action: {
-                    // TODO: More action
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    isSettingsSheetPresented = true
                 }) {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "line.3.horizontal.decrease")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.primary.opacity(0.90))
                         .frame(width: topButtonBarHeight, height: topButtonBarHeight)
@@ -380,7 +386,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
                 layoutEnvironment: layoutEnvironment
             )
             section.interGroupSpacing = 8
-            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8)
             return section
         }
     }()
@@ -680,7 +686,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             }
             completion(true)
         }
-        renameAction.image = UIImage(systemName: "character.cursor.ibeam")
+        renameAction.image = UIImage(systemName: "character.textbox")
         renameAction.backgroundColor = .black
 
         let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in

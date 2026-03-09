@@ -62,133 +62,111 @@ struct ChangeCityNameSheetView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-                .padding(.top, 8)
-                .frame(maxWidth: .infinity)
-
-            ZStack {
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    NativeCenteredNameTextField(
-                        text: $customName,
-                        placeholder: trimmedBaselineDisplayName,
-                        isFocused: $isNameFieldFocused,
-                        onSubmit: {
-                            guard shouldShowSaveButton else { return }
-                            saveAndDismiss()
-                        }
-                    )
-                    .frame(maxWidth: 420)
-                    .frame(height: 58)
-                    .clipped()
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 24)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        }
-        .background(
-            Color(red: 238.0 / 255.0, green: 238.0 / 255.0, blue: 238.0 / 255.0)
-                .ignoresSafeArea()
-        )
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        NavigationStack {
             VStack(spacing: 0) {
-                if shouldShowRestoreOriginalButton {
-                    Button {
-                        triggerNotificationHaptic(.warning)
-                        customName = ""
-                        baselineDisplayName = originalName
-                        DispatchQueue.main.async {
-                            isNameFieldFocused = true
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 13, weight: .medium))
-                            Text("Original")
-                                .font(.system(size: 16, weight: .regular))
-                                .tracking(-0.48)
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .background(
-                            Capsule(style: .continuous)
-                                .fill(Color.black.opacity(0.88))
+                ZStack {
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+
+                        NativeCenteredNameTextField(
+                            text: $customName,
+                            placeholder: trimmedBaselineDisplayName,
+                            isFocused: $isNameFieldFocused,
+                            onSubmit: {
+                                guard shouldShowSaveButton else { return }
+                                saveAndDismiss()
+                            }
                         )
+                        .frame(maxWidth: 420)
+                        .frame(height: 58)
+                        .clipped()
+
+                        Spacer(minLength: 0)
                     }
-                    .buttonStyle(.plain)
-                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                } else if isUsingOriginalNameValue {
-                    Text("For example, the name of the person\nwho lives there")
-                        .font(.system(size: 14, weight: .regular))
-                        .tracking(-0.42)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Color.black.opacity(0.2))
-                        .transition(.opacity)
+                    .padding(.horizontal, 24)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: bottomAccessoryHeight, alignment: .center)
-            .padding(.bottom, 8)
-            .animation(.easeInOut(duration: 0.16), value: shouldShowRestoreOriginalButton)
-        }
-        .onAppear {
-            DispatchQueue.main.async {
-                isNameFieldFocused = true
-            }
-        }
-    }
+            .background(
+                Color(
+                    red: 238.0 / 255.0,
+                    green: 238.0 / 255.0,
+                    blue: 238.0 / 255.0
+                )
+                .ignoresSafeArea()
+            )
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    if shouldShowRestoreOriginalButton {
+                        Button {
+                            triggerNotificationHaptic(.warning)
+                            customName = ""
+                            baselineDisplayName = originalName
+                            DispatchQueue.main.async {
+                                isNameFieldFocused = true
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 13, weight: .medium))
 
-    private var topBar: some View {
-        ZStack {
-            Text("Change Name")
-                .font(.system(size: 17, weight: .semibold))
-                .tracking(-0.43)
-                .foregroundStyle(Color.black.opacity(0.8))
-
-            HStack {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.black.opacity(0.70))
-                        .frame(width: 44, height: 44)
-                        .background(
-                            Circle()
-                                .fill(Color.black.opacity(0.05))
-                        )
-                }
-                .buttonStyle(.plain)
-
-                Spacer(minLength: 0)
-
-                if shouldShowSaveButton {
-                    Button {
-                        saveAndDismiss()
-                    } label: {
-                        Text("Save")
-                            .font(.system(size: 17, weight: .medium))
-                            .tracking(-0.41)
+                                Text("Original")
+                                    .font(.system(size: 16, weight: .regular))
+                                    .tracking(-0.48)
+                            }
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .frame(height: 44)
+                            .padding(.horizontal, 10)
+                            .frame(height: 32)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(.black)
+                                    .fill(Color.black.opacity(0.88))
                             )
+                        }
+                        .buttonStyle(.plain)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                    } else if isUsingOriginalNameValue {
+                        Text("For example, the name of the person\nwho lives there")
+                            .font(.system(size: 14, weight: .regular))
+                            .tracking(-0.42)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Color.black.opacity(0.2))
+                            .transition(.opacity)
                     }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: bottomAccessoryHeight, alignment: .center)
+                .padding(.bottom, 8)
+                .animation(.easeInOut(duration: 0.16), value: shouldShowRestoreOriginalButton)
+            }
+            .navigationTitle("Change Name")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
+                        }
                     .buttonStyle(.plain)
-                } else {
-                    Color.clear
-                        .frame(width: 74, height: 44)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    if shouldShowSaveButton {
+                        Button("Save") {
+                            saveAndDismiss()
+                        }
+                        .font(.system(size: 17, weight: .medium))
+                        .tracking(-0.41)
+                    }
+                }
+            }
+            .onAppear {
+                DispatchQueue.main.async {
+                    isNameFieldFocused = true
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .frame(height: 54)
     }
 
     private func saveAndDismiss() {
