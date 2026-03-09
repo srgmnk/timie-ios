@@ -19,16 +19,6 @@ struct CanonicalCity: Identifiable, Equatable, Hashable {
 struct City: Identifiable, Equatable {
     static let current = City(name: "Bangkok", timeZoneID: "Asia/Bangkok")
 
-    static let initialList: [City] = [
-        .current,
-        City(name: "Tokyo", timeZoneID: "Asia/Tokyo"),
-        City(name: "Sydney", timeZoneID: "Australia/Sydney"),
-        City(name: "Dubai", timeZoneID: "Asia/Dubai"),
-        City(name: "London", timeZoneID: "Europe/London"),
-        City(name: "New York", timeZoneID: "America/New_York"),
-        City(name: "Los Angeles", timeZoneID: "America/Los_Angeles")
-    ]
-
     let canonicalCity: CanonicalCity
     var customDisplayName: String?
 

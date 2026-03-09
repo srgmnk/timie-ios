@@ -11,6 +11,7 @@ struct TimeDialScreen: View {
     @State private var isAddCitySheetPresented = false
     @State private var isSettingsSheetPresented = false
     @State private var cityBeingRenamed: City?
+    private let emptyStateQuoteProvider = EmptyStateQuoteProvider()
 
     private let dialSize: CGFloat = 512
     private let dialCenterYOffset: CGFloat = 125
@@ -39,18 +40,20 @@ struct TimeDialScreen: View {
                 Color(red: 238.0 / 255.0, green: 238.0 / 255.0, blue: 238.0 / 255.0)
                     .ignoresSafeArea()
 
-                CityListReorderUIKitView(
-                    cities: $viewModel.cities,
-                    selectedInstant: viewModel.selectedInstant,
-                    userCurrentLocationItem: currentLocationProvider.currentCityItem,
-                    // Keep scroll content layout independent from pinned button offset.
-                    topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
-                    // Desired visual stop gap from physical screen bottom.
-                    bottomContentInset: cityListDesiredBottomGap,
-                    cardBackgroundColor: Color(red: 0xF7 / 255, green: 0xF7 / 255, blue: 0xF7 / 255),
-                    onRenameRequested: presentRenameSheet(for:)
-                )
-                .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                if !viewModel.cities.isEmpty {
+                    CityListReorderUIKitView(
+                        cities: $viewModel.cities,
+                        selectedInstant: viewModel.selectedInstant,
+                        userCurrentLocationItem: currentLocationProvider.currentCityItem,
+                        // Keep scroll content layout independent from pinned button offset.
+                        topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
+                        // Desired visual stop gap from physical screen bottom.
+                        bottomContentInset: cityListDesiredBottomGap,
+                        cardBackgroundColor: Color(red: 0xF7 / 255, green: 0xF7 / 255, blue: 0xF7 / 255),
+                        onRenameRequested: presentRenameSheet(for:)
+                    )
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                }
 
                 ProgressiveBottomBlurOverlay(height: 180)
                     .allowsHitTesting(false)
@@ -63,6 +66,12 @@ struct TimeDialScreen: View {
                                 .preference(key: DialOverlayHeightPreferenceKey.self, value: proxy.size.height)
                         }
                     )
+
+                if viewModel.cities.isEmpty {
+                    MainEmptyStateQuoteView(quote: emptyStateQuoteProvider.currentQuote)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+                        .allowsHitTesting(false)
+                }
             }
             .overlay(alignment: .top) {
                 topButtonBar()
