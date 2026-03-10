@@ -135,7 +135,7 @@ struct ChangeCityNameSheetView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: bottomAccessoryHeight, alignment: .center)
-                .padding(.bottom, 8)
+//                .padding(.bottom, 8)
                 .animation(.easeInOut(duration: 0.16), value: shouldShowRestoreOriginalButton)
             }
             .navigationTitle("Change Name")

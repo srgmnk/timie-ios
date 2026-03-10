@@ -1,20 +1,63 @@
 import SwiftUI
 import UIKit
+import MessageUI
+
+private enum RowTrailing {
+    case text(String)
+    case symbol(String)
+}
 
 struct SettingsSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @AppStorage(AppTimeFormatPreference.storageKey) private var timeFormatPreferenceRawValue = AppTimeFormatPreference.system.rawValue
+    @State private var isMailComposerPresented = false
 
     private let linkRows = [
-        (title: "Rate on the App Store", trailing: "ver 1.0.1"),
-        (title: "Privacy Policy", trailing: nil as String?),
-        (title: "Terms & Conditions", trailing: nil as String?),
-        (title: "Contact Me", trailing: "Any suggestions?")
+        (title: "Rate on the App Store", trailing: RowTrailing.text("ver 1.0.1")),
+        (title: "Contact Me", trailing: RowTrailing.text("Any suggestions?")),
+        (title: "Privacy Policy", trailing: RowTrailing.symbol("arrow.up.forward")),
+        (title: "Terms & Conditions", trailing: RowTrailing.symbol("arrow.up.forward"))
     ]
 
     private var selectedTimeFormatPreference: AppTimeFormatPreference {
         get { AppTimeFormatPreference.from(rawValue: timeFormatPreferenceRawValue) }
         set { timeFormatPreferenceRawValue = newValue.rawValue }
+    }
+
+    private var mailRecipient: String { "hi@sergy.xyz" }
+    private var mailSubject: String { "Timie — Contact" }
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+    }
+    private var appBuild: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+    }
+    private var appearanceSettingDescription: String { "System" }
+    private var mailBody: String {
+        let locale = Locale.current.identifier
+        let timeZone = TimeZone.current.identifier
+        let iOSVersion = UIDevice.current.systemVersion
+        let deviceModel = UIDevice.current.model
+        let deviceName = UIDevice.current.name
+        let hardwareIdentifier = Self.hardwareIdentifier() ?? "Unknown"
+
+        return """
+        Hello,
+
+        [Write your message here]
+
+        ---
+        App: Timie
+        Version: \(appVersion) (\(appBuild))
+        iOS: \(iOSVersion)
+        Device: \(deviceModel) (\(deviceName))
+        Device Identifier: \(hardwareIdentifier)
+        Locale: \(locale)
+        Time Zone: \(timeZone)
+        Time Format Setting: \(selectedTimeFormatPreference.displayTitle)
+        Appearance Setting: \(appearanceSettingDescription)
+        """
     }
 
     var body: some View {
@@ -34,7 +77,7 @@ struct SettingsSheetView: View {
                     .padding(.top, -16)
                     
                     heroSection
-                        .padding(.top, -40)
+                        .padding(.top, -32)
                     
                     settingsBlock
                         .padding(.top, 12)
@@ -62,6 +105,13 @@ struct SettingsSheetView: View {
             }
         }
         .scrollBounceBehavior(.basedOnSize)
+        .sheet(isPresented: $isMailComposerPresented) {
+            MailComposeView(
+                recipients: [mailRecipient],
+                subject: mailSubject,
+                messageBody: mailBody
+            )
+        }
     }
     
 
@@ -101,10 +151,49 @@ struct SettingsSheetView: View {
     private var linksBlock: some View {
         VStack(spacing: 2) {
             ForEach(Array(linkRows.enumerated()), id: \.offset) { index, row in
-                SettingsLinkRow(title: row.title, trailingText: row.trailing)
+                let contactTapHandler: (() -> Void)? = row.title == "Contact Me"
+                    ? { presentContactMe() }
+                    : nil
+                SettingsLinkRow(
+                    title: row.title,
+                    trailing: row.trailing,
+                    onTap: contactTapHandler
+                )
                     .background(groupedRowBackground(for: index, total: linkRows.count))
             }
         }
+    }
+
+    private func presentContactMe() {
+        if MFMailComposeViewController.canSendMail() {
+            isMailComposerPresented = true
+            return
+        }
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = mailRecipient
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: mailSubject),
+            URLQueryItem(name: "body", value: mailBody)
+        ]
+
+        guard let url = components.url else { return }
+        openURL(url)
+    }
+
+    private static func hardwareIdentifier() -> String? {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+
+        let identifier = withUnsafePointer(to: &systemInfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(cString: $0)
+            }
+        }
+
+        let trimmed = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private var footer: some View {
@@ -194,7 +283,7 @@ private struct TimeFormatMenuRow: View {
                 .frame(height: 48)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.black.opacity(0.05))
+                        .fill(Color.black.opacity(0.03))
                 )
             }
             .buttonStyle(.plain)
@@ -249,7 +338,7 @@ private struct SettingsValueRow: View {
             .frame(height: 48)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.black.opacity(0.05))
+                    .fill(Color.black.opacity(0.03))
             )
         }
         .padding(.leading, 20)
@@ -260,9 +349,11 @@ private struct SettingsValueRow: View {
 
 private struct SettingsLinkRow: View {
     let title: String
-    let trailingText: String?
+    let trailing: RowTrailing?
+    let onTap: (() -> Void)?
 
-    var body: some View {
+    @ViewBuilder
+    private var rowContent: some View {
         HStack(spacing: 12) {
             Text(title)
                 .font(.system(size: 16, weight: .regular))
@@ -271,14 +362,66 @@ private struct SettingsLinkRow: View {
 
             Spacer(minLength: 0)
 
-            if let trailingText {
-                Text(trailingText)
-                    .font(.system(size: 16, weight: .regular))
-                    .tracking(-0.48)
-                    .foregroundStyle(Color.black.opacity(0.15))
+            if let trailing {
+                switch trailing {
+                case .text(let value):
+                    Text(value)
+                        .font(.system(size: 16, weight: .regular))
+                        .tracking(-0.48)
+                        .foregroundStyle(Color.black.opacity(0.15))
+                case .symbol(let name):
+                    Image(systemName: name)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.black.opacity(0.15))
+                }
             }
         }
         .padding(.horizontal, 20)
         .frame(height: 64)
+    }
+
+    var body: some View {
+        if let onTap {
+            Button(action: onTap) {
+                rowContent
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+        } else {
+            rowContent
+        }
+    }
+}
+
+private struct MailComposeView: UIViewControllerRepresentable {
+    let recipients: [String]
+    let subject: String
+    let messageBody: String
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let controller = MFMailComposeViewController()
+        controller.mailComposeDelegate = context.coordinator
+        controller.setToRecipients(recipients)
+        controller.setSubject(subject)
+        controller.setMessageBody(messageBody, isHTML: false)
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {
+        // No-op
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        func mailComposeController(
+            _ controller: MFMailComposeViewController,
+            didFinishWith result: MFMailComposeResult,
+            error: Error?
+        ) {
+            controller.dismiss(animated: true)
+        }
     }
 }
