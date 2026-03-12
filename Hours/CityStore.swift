@@ -6,10 +6,6 @@ import Combine
 final class CityStore: ObservableObject {
     @Published var cities: [City] = [] {
         didSet {
-            log(
-                "[EMPTYBUG] cities didSet oldCount=\(oldValue.count) newCount=\(cities.count) " +
-                "isLoading=\(isLoading) main=\(Thread.isMainThread)"
-            )
             guard !isLoading else { return }
             save()
         }
@@ -18,7 +14,6 @@ final class CityStore: ObservableObject {
     private let fileManager: FileManager
     private let citiesFileURL: URL
     private var isLoading = false
-    private var debugCancellables: Set<AnyCancellable> = []
 
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -29,40 +24,33 @@ final class CityStore: ObservableObject {
             citiesFileURL = fallback
             log("Failed to resolve Application Support URL. Using fallback \(fallback.path). Error: \(error)")
         }
-        setupDebugObservation()
         load()
     }
 
     func load() {
-        log("[EMPTYBUG] load start path=\(citiesFileURL.path) main=\(Thread.isMainThread)")
         isLoading = true
         defer { isLoading = false }
 
         do {
             try ensureParentDirectoryExists()
             guard fileManager.fileExists(atPath: citiesFileURL.path) else {
-                log("[EMPTYBUG] load file missing; initializing empty cities")
                 cities = []
                 return
             }
             let data = try Data(contentsOf: citiesFileURL)
             let decoded = try JSONDecoder().decode([City].self, from: data)
-            log("[EMPTYBUG] load decoded count=\(decoded.count)")
             let migration = migrateCanonicalIdentitiesIfNeeded(decoded)
             cities = migration.cities
-            log("[EMPTYBUG] load applied cities count=\(cities.count) migrated=\(migration.didMigrate)")
             if migration.didMigrate {
                 save()
             }
         } catch {
             log("Failed to load cities from \(citiesFileURL.path). Error: \(error)")
-            log("[EMPTYBUG] load failed; resetting to empty")
             cities = []
         }
     }
 
     func save() {
-        log("[EMPTYBUG] save start count=\(cities.count) path=\(citiesFileURL.path) main=\(Thread.isMainThread)")
         do {
             try ensureParentDirectoryExists()
             let encoder = JSONEncoder()
@@ -71,10 +59,8 @@ final class CityStore: ObservableObject {
             #endif
             let data = try encoder.encode(cities)
             try data.write(to: citiesFileURL, options: [.atomic])
-            log("[EMPTYBUG] save success count=\(cities.count)")
         } catch {
             log("Failed to save cities to \(citiesFileURL.path). Error: \(error)")
-            log("[EMPTYBUG] save failed count=\(cities.count)")
         }
     }
 
@@ -154,20 +140,6 @@ final class CityStore: ObservableObject {
             return "custom.gmt"
         }
         return nil
-    }
-
-    private func setupDebugObservation() {
-        #if DEBUG
-        objectWillChange
-            .sink { [weak self] in
-                guard let self else { return }
-                self.log(
-                    "[EMPTYBUG] objectWillChange emitted currentCount=\(self.cities.count) " +
-                    "isLoading=\(self.isLoading) main=\(Thread.isMainThread)"
-                )
-            }
-            .store(in: &debugCancellables)
-        #endif
     }
 
     private func log(_ message: String) {

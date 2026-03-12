@@ -7,7 +7,7 @@
         "key": "Add City",
         "location": {
           "startingColumn": 30,
-          "startingLine": 171
+          "startingLine": 164
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "Popular cities",
         "location": {
           "startingColumn": 18,
-          "startingLine": 233
+          "startingLine": 224
         }
       }
     ]

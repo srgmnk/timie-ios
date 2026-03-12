@@ -6,13 +6,31 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EAE58B622F628E1C005DCC44 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EAE58B612F628E1C005DCC44 /* LaunchScreen.storyboard */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		EA036D4A2F51B1C100C06B8A /* Hours.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hours.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EAE58B612F628E1C005DCC44 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		EAE58B642F62BE6C005DCC44 /* Exceptions for "Hours" folder in "Hours" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = EA036D492F51B1C100C06B8A /* Hours */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		EA036D4C2F51B1C100C06B8A /* Hours */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				EAE58B642F62BE6C005DCC44 /* Exceptions for "Hours" folder in "Hours" target */,
+			);
 			path = Hours;
 			sourceTree = "<group>";
 		};
@@ -32,6 +50,7 @@
 		EA036D412F51B1C100C06B8A = {
 			isa = PBXGroup;
 			children = (
+				EAE58B612F628E1C005DCC44 /* LaunchScreen.storyboard */,
 				EA036D4C2F51B1C100C06B8A /* Hours */,
 				EA036D4B2F51B1C100C06B8A /* Products */,
 			);
@@ -109,6 +128,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAE58B622F628E1C005DCC44 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,13 +277,15 @@
 				DEVELOPMENT_TEAM = KD5TK98R4N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Hours/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hours;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to suggest your current city in Add City.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -292,13 +314,15 @@
 				DEVELOPMENT_TEAM = KD5TK98R4N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Hours/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hours;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to suggest your current city in Add City.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

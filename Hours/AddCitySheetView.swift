@@ -95,22 +95,15 @@ struct AddCitySheetView: View {
                             searchTask?.cancel()
 
                             guard let item else { return }
-                            emptyBugLog(
-                                "row tapped id=\(item.canonicalIdentity) city=\(item.city) " +
-                                "alreadyAdded=\(isAlreadyAdded) query=\"\(trimmedQuery)\" main=\(Thread.isMainThread)"
-                            )
 
                             guard !isAlreadyAdded else {
-                                emptyBugLog("row already added; dismissing without callback id=\(item.canonicalIdentity)")
                                 dismiss()
                                 return
                             }
 
                             let generator = UINotificationFeedbackGenerator()
                             generator.notificationOccurred(.success)
-                            emptyBugLog("invoking onSelect for id=\(item.canonicalIdentity)")
                             onSelect(item)
-                            emptyBugLog("sending dismiss() for selected id=\(item.canonicalIdentity)")
                             dismiss()
                         } label: {
                             HStack(alignment: .center, spacing: 12) {
@@ -192,7 +185,6 @@ struct AddCitySheetView: View {
         }
         .background(SheetStyle.appScreenBackground(for: theme).ignoresSafeArea())
         .onAppear {
-            emptyBugLog("sheet onAppear existingIDsCount=\(existingCanonicalIDs.count)")
             performSearch(for: query)
             currentLocationProvider.requestCurrentCity()
             DispatchQueue.main.async {
@@ -206,7 +198,6 @@ struct AddCitySheetView: View {
             }
         }
         .onDisappear {
-            emptyBugLog("sheet onDisappear")
             searchTask?.cancel()
             isSearchFieldFocused = false
         }
@@ -351,11 +342,6 @@ struct AddCitySheetView: View {
         return .utc(utcOffsetText(for: item.timeZoneIdentifier, referenceDate: referenceDate))
     }
 
-    private func emptyBugLog(_ message: String) {
-        #if DEBUG
-        print("[EMPTYBUG][AddCitySheet] \(message)")
-        #endif
-    }
 }
 
 private struct LocationPlaceholderShimmer: ViewModifier {
