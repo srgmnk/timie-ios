@@ -14,12 +14,13 @@ struct SettingsSheetView: View {
     @AppStorage(AppTimeFormatPreference.storageKey) private var timeFormatPreferenceRawValue = AppTimeFormatPreference.system.rawValue
     @AppStorage(AppAppearancePreference.storageKey) private var appearancePreferenceRawValue = AppAppearancePreference.system.rawValue
     @State private var isMailComposerPresented = false
+    @State private var presentedLegalDocument: LegalDocument?
 
     private let linkRows = [
         (title: "Rate on the App Store", trailing: RowTrailing.text("ver 1.0.1")),
         (title: "Contact Me", trailing: RowTrailing.text("Any suggestions?")),
         (title: "Privacy Policy", trailing: RowTrailing.symbol("arrow.up.forward")),
-        (title: "Terms & Conditions", trailing: RowTrailing.symbol("arrow.up.forward"))
+        (title: "Terms of Use", trailing: RowTrailing.symbol("arrow.up.forward"))
     ]
 
     private var selectedTimeFormatPreference: AppTimeFormatPreference {
@@ -135,6 +136,9 @@ struct SettingsSheetView: View {
                 subject: mailSubject,
                 messageBody: mailBody
             )
+        }
+        .sheet(item: $presentedLegalDocument) { document in
+            LegalDocumentSheet(document: document)
         }
     }
     
@@ -278,13 +282,23 @@ struct SettingsSheetView: View {
     private var linksBlock: some View {
         VStack(spacing: 1) {
             ForEach(Array(linkRows.enumerated()), id: \.offset) { index, row in
-                let contactTapHandler: (() -> Void)? = row.title == "Contact Me"
-                    ? { presentContactMe() }
-                    : nil
+                let onTapHandler: (() -> Void)? = {
+                    switch row.title {
+                    case "Contact Me":
+                        presentContactMe()
+                    case "Privacy Policy":
+                        presentedLegalDocument = .privacy
+                    case "Terms of Use":
+                        presentedLegalDocument = .terms
+                    default:
+                        return
+                    }
+                }
+
                 SettingsLinkRow(
                     title: row.title,
                     trailing: row.trailing,
-                    onTap: contactTapHandler
+                    onTap: onTapHandler
                 )
                     .background(groupedRowBackground(for: index, total: linkRows.count))
             }
