@@ -1,0 +1,23 @@
+{
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/SheetStyle.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SheetStyle.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SheetStyle.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SheetStyle.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SheetStyle.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SheetStyle.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/TimeDialScreen.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialScreen.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialScreen.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialScreen.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialScreen.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialScreen.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/TimeDialView.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialView.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialView.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialView.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialView.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/TimeDialView.swiftdeps"
+  }
+}

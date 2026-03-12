@@ -1,0 +1,30 @@
+{
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/AddCitySheetView.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AddCitySheetView.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AddCitySheetView.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AddCitySheetView.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AddCitySheetView.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AddCitySheetView.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/AppAppearancePreference.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppAppearancePreference.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppAppearancePreference.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppAppearancePreference.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppAppearancePreference.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppAppearancePreference.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/AppTheme.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTheme.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTheme.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTheme.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTheme.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTheme.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/AppTimeFormatPreference.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTimeFormatPreference.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTimeFormatPreference.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTimeFormatPreference.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTimeFormatPreference.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/AppTimeFormatPreference.swiftdeps"
+  }
+}

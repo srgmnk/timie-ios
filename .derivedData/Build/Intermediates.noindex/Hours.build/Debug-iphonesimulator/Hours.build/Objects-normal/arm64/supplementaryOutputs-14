@@ -1,0 +1,23 @@
+{
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/ProgressiveBottomBlurOverlay.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/ProgressiveBottomBlurOverlay.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/ProgressiveBottomBlurOverlay.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/ProgressiveBottomBlurOverlay.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/ProgressiveBottomBlurOverlay.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/ProgressiveBottomBlurOverlay.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/SettingsParallaxIllustrationView.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsParallaxIllustrationView.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsParallaxIllustrationView.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsParallaxIllustrationView.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsParallaxIllustrationView.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsParallaxIllustrationView.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/SettingsSheetView.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsSheetView.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsSheetView.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsSheetView.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsSheetView.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/arm64/SettingsSheetView.swiftdeps"
+  }
+}

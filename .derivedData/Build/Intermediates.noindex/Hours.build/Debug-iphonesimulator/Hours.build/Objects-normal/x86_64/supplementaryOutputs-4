@@ -1,0 +1,30 @@
+{
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/ChangeCityNameSheetView.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/ChangeCityNameSheetView.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/ChangeCityNameSheetView.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/ChangeCityNameSheetView.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/ChangeCityNameSheetView.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/ChangeCityNameSheetView.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/City.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/City.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/City.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/City.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/City.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/City.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/CityCardView.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CityCardView.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CityCardView.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CityCardView.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CityCardView.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CityCardView.swiftdeps"
+  },
+  "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/CitySearchItem.swift" : {
+    "const-values" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CitySearchItem.swiftconstvalues",
+    "dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CitySearchItem.d",
+    "diagnostics" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CitySearchItem.dia",
+    "object" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CitySearchItem.o",
+    "swift-dependencies" : "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/.derivedData/Build/Intermediates.noindex/Hours.build/Debug-iphonesimulator/Hours.build/Objects-normal/x86_64/CitySearchItem.swiftdeps"
+  }
+}

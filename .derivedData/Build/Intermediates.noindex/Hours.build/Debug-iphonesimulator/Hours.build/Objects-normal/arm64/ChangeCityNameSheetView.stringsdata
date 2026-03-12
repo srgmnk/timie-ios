@@ -1,0 +1,40 @@
+{
+  "source": "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/ChangeCityNameSheetView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Change Name",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 138
+        }
+      },
+      {
+        "comment": "",
+        "key": "For example, the name of the person\nwho lives there",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "Original",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 154
+        }
+      }
+    ]
+  },
+  "version": 1
+}

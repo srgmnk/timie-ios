@@ -1,0 +1,24 @@
+{
+  "source": "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/AddCitySheetView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Add City",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 171
+        }
+      },
+      {
+        "comment": "",
+        "key": "Popular cities",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 233
+        }
+      }
+    ]
+  },
+  "version": 1
+}

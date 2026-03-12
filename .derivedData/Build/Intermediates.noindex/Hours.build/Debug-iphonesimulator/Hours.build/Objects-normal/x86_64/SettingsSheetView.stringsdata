@@ -1,0 +1,72 @@
+{
+  "source": "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/SettingsSheetView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 123
+        }
+      },
+      {
+        "comment": "",
+        "key": "Catch",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 92
+        }
+      },
+      {
+        "comment": "",
+        "key": "the moment",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "in hours",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "Time format",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 172
+        }
+      },
+      {
+        "comment": "",
+        "key": "Appearance",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "built by one person simply because I’d wanted\nit for a long time",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 342
+        }
+      },
+      {
+        "comment": "",
+        "key": "fortis imaginatio generat casum\n© 2026",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 348
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,24 @@
+{
+  "source": "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/CityCardView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "DST",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "UTC",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 156
+        }
+      }
+    ]
+  },
+  "version": 1
+}

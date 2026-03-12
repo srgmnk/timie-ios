@@ -1,0 +1,16 @@
+{
+  "source": "/Users/srgmnk/Library/CloudStorage/Dropbox/Xcode/Timie/Hours/TimeDialScreen.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Add",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 207
+        }
+      }
+    ]
+  },
+  "version": 1
+}

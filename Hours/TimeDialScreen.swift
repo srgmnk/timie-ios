@@ -14,6 +14,7 @@ struct TimeDialScreen: View {
     @State private var isAddCitySheetPresented = false
     @State private var isSettingsSheetPresented = false
     @State private var cityBeingRenamed: City?
+    @State private var pendingAddedCityItem: CitySearchItem?
     private let emptyStateQuoteProvider = EmptyStateQuoteProvider()
 
     private let dialSize: CGFloat = 512
@@ -41,25 +42,47 @@ struct TimeDialScreen: View {
         GeometryReader { geo in
             let topSafeInset = resolvedTopSafeAreaInset(from: geo)
             let topControlsTop = topButtonTopOffset - max(0, 59 - topSafeInset)
+            let citiesCount = cityStore.cities.count
+            let isCitiesEmpty = cityStore.cities.isEmpty
 
             ZStack(alignment: .bottom) {
                 SheetStyle.appScreenBackground(for: theme)
                     .ignoresSafeArea()
 
-                if !cityStore.cities.isEmpty {
-                    CityListReorderUIKitView(
-                        cities: $cityStore.cities,
-                        selectedInstant: viewModel.selectedInstant,
-                        userCurrentLocationItem: currentLocationProvider.currentCityItem,
-                        // Keep scroll content layout independent from pinned button offset.
-                        topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
-                        // Desired visual stop gap from physical screen bottom.
-                        bottomContentInset: cityListDesiredBottomGap,
-                        cardBackgroundColor: SheetStyle.appCardBackground(for: theme),
-                        onRenameRequested: presentRenameSheet(for:)
-                    )
-                    .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                Group {
+                    if isCitiesEmpty {
+                        MainEmptyStateQuoteView(quote: emptyStateQuoteProvider.currentQuote)
+                            .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+                            .allowsHitTesting(false)
+                            .onAppear {
+                                emptyBugLog("empty-quote branch appeared count=\(citiesCount) isEmpty=\(isCitiesEmpty)")
+                            }
+                            .onDisappear {
+                                emptyBugLog("empty-quote branch disappeared count=\(cityStore.cities.count) isEmpty=\(cityStore.cities.isEmpty)")
+                            }
+                    } else {
+                        CityListReorderUIKitView(
+                            cities: $cityStore.cities,
+                            selectedInstant: viewModel.selectedInstant,
+                            userCurrentLocationItem: currentLocationProvider.currentCityItem,
+                            // Keep scroll content layout independent from pinned button offset.
+                            topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
+                            // Desired visual stop gap from physical screen bottom.
+                            bottomContentInset: cityListDesiredBottomGap,
+                            cardBackgroundColor: SheetStyle.appCardBackground(for: theme),
+                            onRenameRequested: presentRenameSheet(for:)
+                        )
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                        .onAppear {
+                            emptyBugLog("city-list branch appeared count=\(citiesCount) isEmpty=\(isCitiesEmpty)")
+                        }
+                        .onDisappear {
+                            emptyBugLog("city-list branch disappeared count=\(cityStore.cities.count) isEmpty=\(cityStore.cities.isEmpty)")
+                        }
+                    }
                 }
+                .id(isCitiesEmpty ? "empty" : "list")
+                .zIndex(isCitiesEmpty ? 1 : 0)
 
                 ProgressiveBottomBlurOverlay(height: 180)
                     .allowsHitTesting(false)
@@ -73,11 +96,6 @@ struct TimeDialScreen: View {
                         }
                     )
 
-                if cityStore.cities.isEmpty {
-                    MainEmptyStateQuoteView(quote: emptyStateQuoteProvider.currentQuote)
-                        .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
-                        .allowsHitTesting(false)
-                }
             }
             .overlay(alignment: .top) {
                 topButtonBar()
@@ -90,10 +108,24 @@ struct TimeDialScreen: View {
                 dialHeight = measuredHeight
             }
             .onAppear {
+                emptyBugLog("screen onAppear count=\(cityStore.cities.count) isEmpty=\(cityStore.cities.isEmpty) sheetPresented=\(isAddCitySheetPresented)")
                 prepareDialHaptics()
                 resetNotificationHaptics.prepare()
                 lastSnappedOffsetSteps = viewModel.dialSteps
                 currentLocationProvider.requestCurrentCity()
+            }
+            .onChange(of: cityStore.cities.count) { oldCount, newCount in
+                emptyBugLog(
+                    "cities.count changed \(oldCount) -> \(newCount); " +
+                    "isEmpty=\(cityStore.cities.isEmpty); " +
+                    "emptyBranch=\(cityStore.cities.isEmpty); cityListBranch=\(!cityStore.cities.isEmpty)"
+                )
+            }
+            .onChange(of: cityStore.cities.isEmpty) { oldValue, newValue in
+                emptyBugLog("cities.isEmpty changed \(oldValue) -> \(newValue)")
+            }
+            .onChange(of: isAddCitySheetPresented) { oldValue, newValue in
+                emptyBugLog("isAddCitySheetPresented changed \(oldValue) -> \(newValue)")
             }
             .onChange(of: viewModel.dialSteps) { _, newStep in
                 guard newStep != lastSnappedOffsetSteps else { return }
@@ -115,12 +147,34 @@ struct TimeDialScreen: View {
         }
         .ignoresSafeArea()
         .sheet(isPresented: $isAddCitySheetPresented, onDismiss: {
+            emptyBugLog(
+                "AddCity sheet onDismiss fired count=\(cityStore.cities.count) " +
+                "isEmpty=\(cityStore.cities.isEmpty) hasPending=\(pendingAddedCityItem != nil)"
+            )
+            if let pendingItem = pendingAddedCityItem {
+                emptyBugLog(
+                    "AddCity sheet onDismiss scheduling deferred append id=\(pendingItem.canonicalIdentity) " +
+                    "city=\(pendingItem.city)"
+                )
+                pendingAddedCityItem = nil
+                emptyBugLog("AddCity sheet onDismiss cleared pendingAddedCityItem")
+                DispatchQueue.main.async {
+                    emptyBugLog("AddCity sheet deferred append executing id=\(pendingItem.canonicalIdentity)")
+                    appendCityIfNeeded(pendingItem)
+                }
+            }
             currentLocationProvider.requestCurrentCity()
         }) {
             AddCitySheetView(
                 existingCanonicalIDs: Set(cityStore.cities.map(\.id))
             ) { selectedItem in
-                appendCityIfNeeded(selectedItem)
+                emptyBugLog(
+                    "AddCity callback returned item id=\(selectedItem.canonicalIdentity) " +
+                    "city=\(selectedItem.city) tz=\(selectedItem.timeZoneIdentifier) " +
+                    "countBeforePendingSet=\(cityStore.cities.count)"
+                )
+                pendingAddedCityItem = selectedItem
+                emptyBugLog("AddCity callback stored pendingAddedCityItem id=\(selectedItem.canonicalIdentity)")
             }
         }
         .sheet(isPresented: $isSettingsSheetPresented) {
@@ -144,6 +198,7 @@ struct TimeDialScreen: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
+                    emptyBugLog("Add button tapped; presenting AddCity sheet (currentCount=\(cityStore.cities.count))")
                     isAddCitySheetPresented = true
                 }) {
                     HStack(spacing: 4) {
@@ -298,10 +353,22 @@ struct TimeDialScreen: View {
     }
 
     private func appendCityIfNeeded(_ selectedItem: CitySearchItem) {
-        guard !cityStore.cities.contains(where: { $0.id == selectedItem.canonicalIdentity }) else {
+        let beforeCount = cityStore.cities.count
+        let alreadyExists = cityStore.cities.contains(where: { $0.id == selectedItem.canonicalIdentity })
+        emptyBugLog(
+            "appendCityIfNeeded called id=\(selectedItem.canonicalIdentity) " +
+            "before=\(beforeCount) alreadyExists=\(alreadyExists) main=\(Thread.isMainThread)"
+        )
+        guard !alreadyExists else {
+            emptyBugLog("appendCityIfNeeded skipped duplicate id=\(selectedItem.canonicalIdentity)")
             return
         }
+
         cityStore.cities.append(selectedItem.asCity)
+        emptyBugLog(
+            "appendCityIfNeeded appended id=\(selectedItem.canonicalIdentity) " +
+            "after=\(cityStore.cities.count)"
+        )
     }
 
     private func presentRenameSheet(for city: City) {
@@ -311,6 +378,12 @@ struct TimeDialScreen: View {
     private func applyCustomDisplayName(_ customName: String?, toCityID cityID: City.ID) {
         guard let index = cityStore.cities.firstIndex(where: { $0.id == cityID }) else { return }
         cityStore.cities[index].customDisplayName = customName
+    }
+
+    private func emptyBugLog(_ message: String) {
+        #if DEBUG
+        print("[EMPTYBUG][TimeDialScreen] \(message)")
+        #endif
     }
 }
 
@@ -351,6 +424,12 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> CityListReorderViewController {
         let controller = CityListReorderViewController()
+        #if DEBUG
+        print(
+            "[EMPTYBUG][CityListUIKit] makeUIViewController " +
+            "controller=\(ObjectIdentifier(controller)) citiesCount=\(cities.count)"
+        )
+        #endif
         controller.onCitiesChanged = { [weak coordinator = context.coordinator] updatedCities in
             coordinator?.publishCities(updatedCities)
         }
@@ -365,10 +444,18 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
             bottomInset: bottomContentInset,
             cardBackgroundColor: cardBackgroundColor
         )
+        controller.debugDumpRenderState(tag: "makeUIViewController-after-apply")
         return controller
     }
 
     func updateUIViewController(_ uiViewController: CityListReorderViewController, context: Context) {
+        #if DEBUG
+        print(
+            "[EMPTYBUG][CityListUIKit] updateUIViewController " +
+            "controller=\(ObjectIdentifier(uiViewController)) citiesCount=\(cities.count)"
+        )
+        #endif
+        uiViewController.debugDumpRenderState(tag: "updateUIViewController-before-apply incoming=\(cities.count)")
         context.coordinator.parent = self
         uiViewController.onCitiesChanged = { [weak coordinator = context.coordinator] updatedCities in
             coordinator?.publishCities(updatedCities)
@@ -384,6 +471,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
             bottomInset: bottomContentInset,
             cardBackgroundColor: cardBackgroundColor
         )
+        uiViewController.debugDumpRenderState(tag: "updateUIViewController-after-apply incoming=\(cities.count)")
     }
 }
 
@@ -461,6 +549,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     private var cardBackgroundColor: Color = AppTheme.light.surfaceCard
     private var isReordering = false
     private var pendingExternalState: PendingExternalState?
+    private var needsPostAttachReload = false
     private var draggedCityID: City.ID?
     private weak var liftedCell: CityListReorderCollectionCell?
     private let deleteSuccessHaptics = UINotificationFeedbackGenerator()
@@ -485,11 +574,18 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         collectionView.addGestureRecognizer(longPressGestureRecognizer)
         applySectionInsets()
         deleteSuccessHaptics.prepare()
+        debugDumpRenderState(tag: "viewDidLoad-end")
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         applySectionInsets()
+        debugDumpRenderState(tag: "viewDidLayoutSubviews")
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        runPostAttachReloadIfNeeded(trigger: "viewDidAppear")
     }
 
     func apply(
@@ -500,7 +596,13 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         bottomInset: CGFloat,
         cardBackgroundColor: Color
     ) {
+        emptyBugLog(
+            "controller.apply start incomingCities=\(cities.count) localBefore=\(citiesLocal.count) " +
+            "topInset=\(topInset) bottomInset=\(bottomInset) isReordering=\(isReordering)"
+        )
+        debugDumpRenderState(tag: "apply-start incoming=\(cities.count) localBefore=\(citiesLocal.count)")
         if isReordering {
+            emptyBugLog("controller.apply deferred due to active reordering incomingCities=\(cities.count)")
             pendingExternalState = PendingExternalState(
                 cities: cities,
                 selectedInstant: selectedInstant,
@@ -525,18 +627,48 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             collectionView.collectionViewLayout.invalidateLayout()
         }
 
+        if cities.isEmpty && needsPostAttachReload {
+            emptyBugLog("clearing deferred reload flag because incoming cities are empty")
+            needsPostAttachReload = false
+        }
+
+        if cities.count > 0, !isRenderReadyForNonEmptyReload {
+            if !needsPostAttachReload {
+                emptyBugLog(
+                    "scheduling deferred reload incomingCities=\(cities.count) " +
+                    "inWindow=\(view.window != nil) frame=\(collectionView.frame) bounds=\(collectionView.bounds)"
+                )
+            }
+            needsPostAttachReload = true
+        }
+
         if citiesLocal != cities {
             citiesLocal = cities
+            emptyBugLog("controller.apply citiesLocal updated -> \(citiesLocal.count); calling reloadData()")
             collectionView.reloadData()
+            debugDumpRenderState(tag: "apply-after-reload-immediate citiesLocal=\(citiesLocal.count)")
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.collectionView.layoutIfNeeded()
+                self.debugDumpRenderState(tag: "apply-after-reload-next-runloop citiesLocal=\(self.citiesLocal.count)")
+            }
             return
         }
 
         if didCurrentLocationChange {
+            emptyBugLog("controller.apply reloading due to current-location change")
             collectionView.reloadData()
+            debugDumpRenderState(tag: "apply-after-reload-location-change")
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.collectionView.layoutIfNeeded()
+                self.debugDumpRenderState(tag: "apply-after-reload-location-next-runloop")
+            }
             return
         }
 
         reconfigureVisibleCells()
+        debugDumpRenderState(tag: "apply-end-reconfigure-visible")
     }
 
     private func applySectionInsets() {
@@ -577,6 +709,71 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             )
             Self.didPrintBottomInsetProbe = true
         }
+        #endif
+    }
+
+    private func emptyBugLog(_ message: String) {
+        #if DEBUG
+        print("[EMPTYBUG][CityListUIKit] \(message)")
+        #endif
+    }
+
+    private var isRenderReadyForNonEmptyReload: Bool {
+        let hasNonZeroBounds = collectionView.bounds.width > 0 && collectionView.bounds.height > 0
+        return view.window != nil && hasNonZeroBounds
+    }
+
+    private func runPostAttachReloadIfNeeded(trigger: String) {
+        guard needsPostAttachReload else { return }
+        guard !citiesLocal.isEmpty else { return }
+        guard isRenderReadyForNonEmptyReload else { return }
+
+        emptyBugLog(
+            "executing deferred reload trigger=\(trigger) citiesLocal=\(citiesLocal.count) " +
+            "inWindow=\(view.window != nil) frame=\(collectionView.frame) bounds=\(collectionView.bounds)"
+        )
+        collectionView.collectionViewLayout.invalidateLayout()
+        collectionView.reloadData()
+        collectionView.layoutIfNeeded()
+        needsPostAttachReload = false
+        debugDumpRenderState(tag: "post-attach-reload-executed trigger=\(trigger)")
+    }
+
+    func debugDumpRenderState(tag: String) {
+        #if DEBUG
+        let sectionCount = collectionView.numberOfSections
+        let itemCountSection0 = sectionCount > 0 ? collectionView.numberOfItems(inSection: 0) : 0
+        let visibleCellCount = collectionView.visibleCells.count
+        let isCollectionZeroSize = collectionView.bounds.width <= 0 || collectionView.bounds.height <= 0
+        let isRootViewZeroSize = view.bounds.width <= 0 || view.bounds.height <= 0
+
+        let overlaySubviews = view.subviews.filter { $0 !== collectionView }
+        let visibleOverlaySubviews = overlaySubviews.filter { !$0.isHidden && $0.alpha > 0.01 }
+        let overlaySummary = visibleOverlaySubviews
+            .map { "\(type(of: $0)) frame=\($0.frame)" }
+            .joined(separator: " | ")
+
+        let backgroundViewSummary: String
+        if let backgroundView = collectionView.backgroundView {
+            backgroundViewSummary =
+                "type=\(type(of: backgroundView)) hidden=\(backgroundView.isHidden) " +
+                "alpha=\(backgroundView.alpha) frame=\(backgroundView.frame)"
+        } else {
+            backgroundViewSummary = "none"
+        }
+
+        emptyBugLog(
+            "state[\(tag)] isViewLoaded=\(isViewLoaded) inWindow=\(view.window != nil) " +
+            "viewHidden=\(view.isHidden) viewAlpha=\(view.alpha) viewFrame=\(view.frame) viewBounds=\(view.bounds) " +
+            "collectionHidden=\(collectionView.isHidden) collectionAlpha=\(collectionView.alpha) " +
+            "collectionFrame=\(collectionView.frame) collectionBounds=\(collectionView.bounds) " +
+            "contentSize=\(collectionView.contentSize) contentOffset=\(collectionView.contentOffset) " +
+            "contentInset=\(collectionView.contentInset) adjustedInset=\(collectionView.adjustedContentInset) " +
+            "sections=\(sectionCount) items0=\(itemCountSection0) visibleCells=\(visibleCellCount) " +
+            "collectionZeroSize=\(isCollectionZeroSize) rootZeroSize=\(isRootViewZeroSize) " +
+            "overlayVisibleCount=\(visibleOverlaySubviews.count) overlayVisible=[\(overlaySummary)] " +
+            "backgroundView=\(backgroundViewSummary) main=\(Thread.isMainThread)"
+        )
         #endif
     }
 
@@ -802,7 +999,8 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        citiesLocal.count
+        emptyBugLog("numberOfItems section=\(section) -> \(citiesLocal.count)")
+        return citiesLocal.count
     }
 
     func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
@@ -852,6 +1050,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         guard indexPath.item < citiesLocal.count else { return cell }
 
         let city = citiesLocal[indexPath.item]
+        emptyBugLog("cellForItem index=\(indexPath.item) cityID=\(city.id)")
         let referenceTimeZone = citiesLocal.first?.timeZone ?? city.timeZone
         let matchedCurrentLocationIndex = currentLocationMatchIndex()
         cell.configure(
@@ -897,6 +1096,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         viewForSupplementaryElementOfKind kind: String,
         at indexPath: IndexPath
     ) -> UICollectionReusableView {
+        emptyBugLog("viewForSupplementary kind=\(kind) index=\(indexPath)")
         guard kind == UICollectionView.elementKindSectionHeader else {
             return UICollectionReusableView()
         }
