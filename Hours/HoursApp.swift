@@ -1,14 +1,13 @@
 //
-//  TimieApp.swift
-//  Timie
-//
-//  Created by Sergy on 27.02.2026.
+//  HoursApp.swift
+//  created by sergy
+//  fortis imaginatio generat casum
 //
 
 import SwiftUI
 
 @main
-struct TimieApp: App {
+struct HoursApp: App {
     @StateObject private var cityStore = CityStore()
 
     var body: some Scene {

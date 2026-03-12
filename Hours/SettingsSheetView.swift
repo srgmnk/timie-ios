@@ -45,7 +45,7 @@ struct SettingsSheetView: View {
     }
 
     private var mailRecipient: String { "hi@sergy.xyz" }
-    private var mailSubject: String { "Timie — Contact" }
+    private var mailSubject: String { "Hours — Contact" }
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
     }
@@ -67,7 +67,7 @@ struct SettingsSheetView: View {
         [Write your message here]
 
         ---
-        App: Timie
+        App: Hours
         Version: \(appVersion) (\(appBuild))
         iOS: \(iOSVersion)
         Device: \(deviceModel) (\(deviceName))

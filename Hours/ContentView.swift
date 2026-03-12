@@ -1,8 +1,7 @@
 //
-//  ContentView.swift
-//  Timie
-//
-//  Created by Sergy on 27.02.2026.
+//  HoursApp.swift
+//  created by sergy
+//  fortis imaginatio generat casum
 //
 
 import SwiftUI
