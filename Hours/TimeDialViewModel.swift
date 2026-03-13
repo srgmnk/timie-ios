@@ -34,6 +34,7 @@ final class TimeDialViewModel: ObservableObject {
     private let minutesPerRevolution = 1_440
     private let minutesPerTick = 5
     private let rotationToMinutesSign = -1.0
+    private let calendar = Calendar.current
     private var stepAngleDegrees: Double {
         360.0 / (Double(minutesPerRevolution) / Double(minutesPerTick))
     }
@@ -84,7 +85,11 @@ final class TimeDialViewModel: ObservableObject {
     }
 
     private func syncDeltaFromDialSteps() {
-        deltaMinutes = dialSteps * minutesPerTick
+        if dialSteps == 0 {
+            deltaMinutes = 0
+        } else {
+            deltaMinutes = roundedBaseOffsetMinutes(from: baseTime) + (dialSteps * minutesPerTick)
+        }
         if deltaMinutes == 0 {
             isInteracting = false
         }
@@ -94,7 +99,8 @@ final class TimeDialViewModel: ObservableObject {
         if deltaMinutes == 0, !isInteracting {
             selectedInstant = now
         } else {
-            selectedInstant = baseTime.addingTimeInterval(TimeInterval(deltaMinutes * 60))
+            let steppedBaseTime = dialSteps == 0 ? baseTime : roundedBaseTime(from: baseTime)
+            selectedInstant = steppedBaseTime.addingTimeInterval(TimeInterval(dialSteps * minutesPerTick * 60))
         }
     }
 
@@ -160,5 +166,24 @@ final class TimeDialViewModel: ObservableObject {
                 try? await Task.sleep(for: .seconds(1))
             }
         }
+    }
+
+    private func roundedBaseTime(from date: Date) -> Date {
+        let minuteAlignedDate = minuteAligned(date)
+        let minute = calendar.component(.minute, from: minuteAlignedDate)
+        let roundedMinute = Int((Double(minute) / Double(minutesPerTick)).rounded()) * minutesPerTick
+        let minuteOffset = roundedMinute - minute
+        return calendar.date(byAdding: .minute, value: minuteOffset, to: minuteAlignedDate) ?? minuteAlignedDate
+    }
+
+    private func roundedBaseOffsetMinutes(from date: Date) -> Int {
+        let minuteAlignedDate = minuteAligned(date)
+        let roundedDate = roundedBaseTime(from: date)
+        return calendar.dateComponents([.minute], from: minuteAlignedDate, to: roundedDate).minute ?? 0
+    }
+
+    private func minuteAligned(_ date: Date) -> Date {
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        return calendar.date(from: components) ?? date
     }
 }

@@ -14,8 +14,8 @@ struct CityCardView: View {
     private var secondaryTextColor: Color { theme.textSecondary }
     private let basicMeridiemLabelXOffset: CGFloat = 76
     private let basicMeridiemLabelYOffset: CGFloat = 12
-    private let compactMeridiemLabelXOffset: CGFloat = 45
-    private let compactMeridiemLabelYOffset: CGFloat = 10
+    private let compactMeridiemLabelXOffset: CGFloat = 52
+    private let compactMeridiemLabelYOffset: CGFloat = 7
 
     private var timeComponents: CityTimeFormatter.TimeComponents {
         CityTimeFormatter.formatTimeComponents(selectedInstant, in: city.timeZone)
