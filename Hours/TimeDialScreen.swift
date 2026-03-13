@@ -16,6 +16,7 @@ struct TimeDialScreen: View {
     @State private var isSettingsSheetPresented = false
     @State private var cityBeingRenamed: City?
     @State private var pendingAddedCityItem: CitySearchItem?
+    @AppStorage(CityViewPreference.storageKey) private var cityViewPreferenceRawValue = CityViewPreference.basic.rawValue
     @StateObject private var emptyStateQuoteProvider = EmptyStateQuoteProvider()
 
     private let dialSize: CGFloat = 512
@@ -38,6 +39,10 @@ struct TimeDialScreen: View {
         #else
         true
         #endif
+    }
+
+    private var selectedCityViewPreference: CityViewPreference {
+        CityViewPreference.from(rawValue: cityViewPreferenceRawValue)
     }
 
     var body: some View {
@@ -81,6 +86,7 @@ struct TimeDialScreen: View {
                             cities: $cityStore.cities,
                             selectedInstant: viewModel.selectedInstant,
                             userCurrentLocationItem: currentLocationProvider.currentCityItem,
+                            cityViewPreference: selectedCityViewPreference,
                             // Keep scroll content layout independent from pinned button offset.
                             topSafeAreaInset: topButtonBarTopPadding + ((topButtonBarHeight - logoHeight) / 2),
                             // Desired visual stop gap from physical screen bottom.
@@ -402,6 +408,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
     @Binding var cities: [City]
     let selectedInstant: Date
     let userCurrentLocationItem: CitySearchItem?
+    let cityViewPreference: CityViewPreference
     let topSafeAreaInset: CGFloat
     let bottomContentInset: CGFloat
     let cardBackgroundColor: Color
@@ -437,6 +444,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
             cities: cities,
             selectedInstant: selectedInstant,
             userCurrentLocationItem: userCurrentLocationItem,
+            cityViewPreference: cityViewPreference,
             topInset: topSafeAreaInset,
             bottomInset: bottomContentInset,
             cardBackgroundColor: cardBackgroundColor
@@ -456,6 +464,7 @@ private struct CityListReorderUIKitView: UIViewControllerRepresentable {
             cities: cities,
             selectedInstant: selectedInstant,
             userCurrentLocationItem: userCurrentLocationItem,
+            cityViewPreference: cityViewPreference,
             topInset: topSafeAreaInset,
             bottomInset: bottomContentInset,
             cardBackgroundColor: cardBackgroundColor
@@ -474,6 +483,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         let cities: [City]
         let selectedInstant: Date
         let userCurrentLocationItem: CitySearchItem?
+        let cityViewPreference: CityViewPreference
         let topInset: CGFloat
         let bottomInset: CGFloat
         let cardBackgroundColor: Color
@@ -534,6 +544,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
     private var topInset: CGFloat = 0
     private var bottomInset: CGFloat = 0
     private var userCurrentLocationItem: CitySearchItem?
+    private var cityViewPreference: CityViewPreference = .basic
     private var cardBackgroundColor: Color = AppTheme.light.surfaceCard
     private var isReordering = false
     private var pendingExternalState: PendingExternalState?
@@ -578,6 +589,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         cities: [City],
         selectedInstant: Date,
         userCurrentLocationItem: CitySearchItem?,
+        cityViewPreference: CityViewPreference,
         topInset: CGFloat,
         bottomInset: CGFloat,
         cardBackgroundColor: Color
@@ -587,6 +599,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
                 cities: cities,
                 selectedInstant: selectedInstant,
                 userCurrentLocationItem: userCurrentLocationItem,
+                cityViewPreference: cityViewPreference,
                 topInset: topInset,
                 bottomInset: bottomInset,
                 cardBackgroundColor: cardBackgroundColor
@@ -598,6 +611,8 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         self.cardBackgroundColor = cardBackgroundColor
         let didCurrentLocationChange = self.userCurrentLocationItem != userCurrentLocationItem
         self.userCurrentLocationItem = userCurrentLocationItem
+        let didCityViewPreferenceChange = self.cityViewPreference != cityViewPreference
+        self.cityViewPreference = cityViewPreference
 
         let insetsChanged = self.topInset != topInset || self.bottomInset != bottomInset
         if insetsChanged {
@@ -626,6 +641,16 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         }
 
         if didCurrentLocationChange {
+            collectionView.reloadData()
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.collectionView.layoutIfNeeded()
+            }
+            return
+        }
+
+        if didCityViewPreferenceChange {
+            collectionView.collectionViewLayout.invalidateLayout()
             collectionView.reloadData()
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
@@ -709,6 +734,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
                 referenceTimeZone: referenceTimeZone,
                 isCurrent: indexPath.item == 0,
                 isUserCurrentLocation: matchedCurrentLocationIndex == indexPath.item,
+                cityViewPreference: cityViewPreference,
                 cardBackgroundColor: cardBackgroundColor
             )
         }
@@ -831,6 +857,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             cities: pendingExternalState.cities,
             selectedInstant: pendingExternalState.selectedInstant,
             userCurrentLocationItem: pendingExternalState.userCurrentLocationItem,
+            cityViewPreference: pendingExternalState.cityViewPreference,
             topInset: pendingExternalState.topInset,
             bottomInset: pendingExternalState.bottomInset,
             cardBackgroundColor: pendingExternalState.cardBackgroundColor
@@ -974,6 +1001,7 @@ private final class CityListReorderViewController: UIViewController, UICollectio
             referenceTimeZone: referenceTimeZone,
             isCurrent: indexPath.item == 0,
             isUserCurrentLocation: matchedCurrentLocationIndex == indexPath.item,
+            cityViewPreference: cityViewPreference,
             cardBackgroundColor: cardBackgroundColor
         )
         return cell
@@ -984,7 +1012,8 @@ private final class CityListReorderViewController: UIViewController, UICollectio
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
-        CGSize(width: max(0, collectionView.bounds.width - 32), height: 140)
+        let height: CGFloat = cityViewPreference == .compact ? 88 : 140
+        return CGSize(width: max(0, collectionView.bounds.width - 32), height: height)
     }
 
     func collectionView(
@@ -1121,6 +1150,7 @@ private final class CityListReorderCollectionCell: UICollectionViewCell {
         referenceTimeZone: TimeZone,
         isCurrent: Bool,
         isUserCurrentLocation: Bool,
+        cityViewPreference: CityViewPreference,
         cardBackgroundColor: Color
     ) {
         let resolvedTheme = AppTheme.forColorScheme(traitCollection.userInterfaceStyle == .dark ? .dark : .light)
@@ -1131,6 +1161,7 @@ private final class CityListReorderCollectionCell: UICollectionViewCell {
                 referenceTimeZone: referenceTimeZone,
                 isCurrent: isCurrent,
                 isUserCurrentLocation: isUserCurrentLocation,
+                cityViewPreference: cityViewPreference,
                 cardBackgroundColor: cardBackgroundColor
             )
             .environment(\.appTheme, resolvedTheme)

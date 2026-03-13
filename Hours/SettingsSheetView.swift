@@ -11,6 +11,7 @@ struct SettingsSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.appTheme) private var theme
+    @AppStorage(CityViewPreference.storageKey) private var cityViewPreferenceRawValue = CityViewPreference.basic.rawValue
     @AppStorage(AppTimeFormatPreference.storageKey) private var timeFormatPreferenceRawValue = AppTimeFormatPreference.system.rawValue
     @AppStorage(AppAppearancePreference.storageKey) private var appearancePreferenceRawValue = AppAppearancePreference.system.rawValue
     @State private var isMailComposerPresented = false
@@ -22,6 +23,10 @@ struct SettingsSheetView: View {
         (title: "Privacy Policy", trailing: RowTrailing.symbol("arrow.up.forward")),
         (title: "Terms of Use", trailing: RowTrailing.symbol("arrow.up.forward"))
     ]
+
+    private var selectedCityViewPreference: CityViewPreference {
+        CityViewPreference.from(rawValue: cityViewPreferenceRawValue)
+    }
 
     private var selectedTimeFormatPreference: AppTimeFormatPreference {
         get { AppTimeFormatPreference.from(rawValue: timeFormatPreferenceRawValue) }
@@ -163,12 +168,69 @@ struct SettingsSheetView: View {
 
     private var settingsBlock: some View {
         VStack(spacing: 1) {
+            cityViewRow
+                .background(groupedRowBackground(for: 0, total: 3))
+
             timeFormatRow
-            .background(groupedRowBackground(for: 0, total: 2))
+                .background(groupedRowBackground(for: 1, total: 3))
 
             appearanceRow
-                .background(groupedRowBackground(for: 1, total: 2))
+                .background(groupedRowBackground(for: 2, total: 3))
         }
+    }
+
+    private var cityViewRow: some View {
+        HStack(spacing: 16) {
+            Text("City view")
+                .font(.system(size: 16, weight: .regular))
+                .tracking(-0.48)
+                .foregroundStyle(theme.textPrimary)
+
+            Spacer(minLength: 0)
+
+            Menu {
+                ForEach(CityViewPreference.allCases, id: \.self) { preference in
+                    Button {
+                        cityViewPreferenceRawValue = preference.rawValue
+                        triggerNotificationHaptic(.success)
+                    } label: {
+                        if preference == selectedCityViewPreference {
+                            Label(preference.displayTitle, systemImage: "checkmark")
+                        } else {
+                            Text(preference.displayTitle)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(selectedCityViewPreference.displayTitle)
+                        .font(.system(size: 16, weight: .medium))
+                        .tracking(-0.48)
+                        .foregroundStyle(theme.textPrimary)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(theme.tagNeutralText)
+                }
+                .padding(.leading, 16)
+                .padding(.trailing, 12)
+                .frame(height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(theme.surfaceControl)
+                )
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    triggerImpactHaptic(.medium)
+                }
+            )
+        }
+        .padding(.leading, 20)
+        .padding(.trailing, 8)
+        .frame(height: 64)
     }
 
     private var timeFormatRow: some View {

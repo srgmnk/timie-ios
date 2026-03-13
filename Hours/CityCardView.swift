@@ -7,12 +7,15 @@ struct CityCardView: View {
     let referenceTimeZone: TimeZone
     let isCurrent: Bool
     var isUserCurrentLocation: Bool = false
+    var cityViewPreference: CityViewPreference = .basic
     let cardBackgroundColor: Color
 
     private var titleColor: Color { theme.accent }
     private var secondaryTextColor: Color { theme.textSecondary }
-    private let meridiemLabelXOffset: CGFloat = 66
-    private let meridiemLabelYOffset: CGFloat = 13
+    private let basicMeridiemLabelXOffset: CGFloat = 76
+    private let basicMeridiemLabelYOffset: CGFloat = 12
+    private let compactMeridiemLabelXOffset: CGFloat = 45
+    private let compactMeridiemLabelYOffset: CGFloat = 10
 
     private var timeComponents: CityTimeFormatter.TimeComponents {
         CityTimeFormatter.formatTimeComponents(selectedInstant, in: city.timeZone)
@@ -58,7 +61,7 @@ struct CityCardView: View {
         return (isPositive, String(format: "%d:%02d", hours, minutes))
     }
 
-    private var centerBottomText: String {
+    private var deltaText: String {
         if isCurrent {
             return "Current"
         }
@@ -79,24 +82,30 @@ struct CityCardView: View {
         return (8..<20).contains(hour) ? "sun.max.fill" : "moon.stars.fill"
     }
 
+    private var cardHeight: CGFloat {
+        cityViewPreference == .compact ? 88 : 140
+    }
+
     var body: some View {
+        Group {
+            switch cityViewPreference {
+            case .basic:
+                basicLayout
+            case .compact:
+                compactLayout
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: cardHeight)
+        .background(cardBackgroundColor)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var basicLayout: some View {
         ZStack {
             VStack(spacing: 0) {
-                HStack(spacing: 4) {
-                    if isUserCurrentLocation {
-                        Image(systemName: "location.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(titleColor)
-                    }
-
-                    Text(city.displayName)
-                        .font(.system(size: 14, weight: .semibold))
-                        .tracking(-0.42)
-                        .foregroundStyle(titleColor)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
-                .padding(.top, 16)
+                cityTitle(fontSize: 14, locationSize: 12)
+                    .padding(.top, 16)
 
                 ZStack {
                     Text(timeComponents.numeric)
@@ -110,7 +119,7 @@ struct CityCardView: View {
                             .font(.system(size: 14, weight: .medium))
                             .tracking(-0.42)
                             .foregroundStyle(theme.textPrimary)
-                            .offset(x: meridiemLabelXOffset + 10, y: meridiemLabelYOffset - 1)
+                            .offset(x: basicMeridiemLabelXOffset, y: basicMeridiemLabelYOffset)
                     }
                 }
                 .padding(.top, 4)
@@ -123,60 +132,11 @@ struct CityCardView: View {
                 Spacer()
 
                 HStack {
-                    HStack(spacing: 2) {
-                        if isCurrent {
-                            Text(centerBottomText)
-                                .font(.system(size: 14, weight: .regular))
-                                .tracking(-0.42)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.9)
-                        } else {
-                            Image(systemName: deltaSymbolName)
-                                .font(.system(size: 12, weight: .regular))
-                                .offset(y: -0.5)
-                            Text(centerBottomText)
-                                .font(.system(size: 14, weight: .regular))
-                                .tracking(-0.42)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.9)
-                        }
-                    }
-                    .foregroundStyle(secondaryTextColor)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(
-                        isCurrent
-                            ? "Current"
-                            : ((deltaDisplay?.isPositive == true ? "plus " : "minus ") + centerBottomText.replacingOccurrences(of: ":", with: " hours "))
-                    )
+                    basicDeltaView
 
                     Spacer(minLength: 0)
 
-                    HStack(spacing: 4) {
-                        HStack(spacing: 0) {
-                            Text("UTC")
-                                .font(.system(size: 14, weight: .regular))
-                                .tracking(-0.42)
-                                .foregroundStyle(secondaryTextColor)
-                            Text(utcOffsetValueText)
-                                .font(.system(size: 14, weight: .regular))
-                                .tracking(-0.42)
-                                .foregroundStyle(secondaryTextColor)
-                        }
-
-                        if shouldShowDSTTag {
-                            Text("DST")
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .tracking(-0.9)
-                                .foregroundStyle(theme.textSecondary)
-                                .padding(.horizontal, 5)
-                                .padding(.bottom, 0.5)
-                                .frame(height: 17)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .stroke(theme.borderSubtle, lineWidth: 1)
-                                )
-                        }
-                    }
+                    trailingTimezone
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
@@ -185,8 +145,7 @@ struct CityCardView: View {
             VStack {
                 Spacer()
                 HStack(spacing: 2) {
-                    Image(systemName: dayNightSymbol)
-                        .font(.system(size: 14, weight: .medium))
+                    dayNightIcon(size: 14, weight: .medium)
                     Text(dateText)
                         .font(.system(size: 14, weight: .medium))
                         .tracking(-0.42)
@@ -198,9 +157,180 @@ struct CityCardView: View {
                 .allowsHitTesting(false)
             }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 140)
-        .background(cardBackgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var compactLayout: some View {
+        ZStack {
+            compactTimeView
+                .offset(y: 12)
+
+            VStack {
+                HStack {
+                    dayNightIcon(size: 14, weight: .medium)
+
+                    Spacer(minLength: 0)
+
+                    compactDeltaView
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+
+                Spacer(minLength: 0)
+
+                HStack(alignment: .center) {
+                    Text(dateText)
+                        .font(.system(size: 14, weight: .medium))
+                        .tracking(-0.42)
+                        .foregroundStyle(secondaryTextColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+
+                    Spacer(minLength: 0)
+
+                    trailingTimezone
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+            }
+
+            VStack(spacing: 0) {
+                cityTitle(fontSize: 14, locationSize: 10)
+                    .padding(.top, 14)
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var compactTimeView: some View {
+        ZStack {
+            Text(timeComponents.numeric)
+                .font(.system(size: 32, weight: .medium))
+                .monospacedDigit()
+                .tracking(-0.64)
+                .foregroundStyle(theme.textPrimary)
+
+            if let meridiem = timeComponents.meridiem {
+                Text(meridiem)
+                    .font(.system(size: 12, weight: .medium))
+                    .tracking(-0.24)
+                    .foregroundStyle(theme.textPrimary)
+                    .offset(x: compactMeridiemLabelXOffset, y: compactMeridiemLabelYOffset)
+            }
+        }
+        .offset(y: 2)
+    }
+
+    private var basicDeltaView: some View {
+        HStack(spacing: 2) {
+            if isCurrent {
+                Text(deltaText)
+                    .font(.system(size: 14, weight: .regular))
+                    .tracking(-0.42)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+            } else {
+                Image(systemName: deltaSymbolName)
+                    .font(.system(size: 12, weight: .regular))
+                    .offset(y: -0.5)
+
+                Text(deltaText)
+                    .font(.system(size: 14, weight: .regular))
+                    .tracking(-0.42)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+            }
+        }
+        .foregroundStyle(secondaryTextColor)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(deltaAccessibilityLabel)
+    }
+
+    private var compactDeltaView: some View {
+        Group {
+            if isCurrent {
+                Text(deltaText)
+                    .font(.system(size: 14, weight: .regular))
+                    .tracking(-0.42)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+            } else {
+                HStack(spacing: 2) {
+                    Text(deltaText)
+                        .font(.system(size: 14, weight: .regular))
+                        .tracking(-0.42)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
+
+                    Image(systemName: deltaSymbolName)
+                        .font(.system(size: 12, weight: .regular))
+                        .offset(y: -1)
+                }
+            }
+        }
+        .foregroundStyle(secondaryTextColor)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(deltaAccessibilityLabel)
+    }
+
+    private var trailingTimezone: some View {
+        HStack(spacing: 4) {
+            HStack(spacing: 0) {
+                Text("UTC")
+                    .font(.system(size: 14, weight: .regular))
+                    .tracking(-0.42)
+                    .foregroundStyle(secondaryTextColor)
+                Text(utcOffsetValueText)
+                    .font(.system(size: 14, weight: .regular))
+                    .tracking(-0.42)
+                    .foregroundStyle(secondaryTextColor)
+            }
+
+            if shouldShowDSTTag {
+                Text("DST")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .tracking(cityViewPreference == .compact ? -0.2 : -0.9)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(.horizontal, 5)
+                    .padding(.bottom, 0.5)
+                    .frame(height: 17)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(theme.borderSubtle, lineWidth: 1)
+                    )
+            }
+        }
+    }
+
+    private var deltaAccessibilityLabel: String {
+        if isCurrent {
+            return "Current"
+        }
+
+        let hoursText = deltaText.replacingOccurrences(of: ":", with: " hours ")
+        return (deltaDisplay?.isPositive == true ? "plus " : "minus ") + hoursText
+    }
+
+    private func cityTitle(fontSize: CGFloat, locationSize: CGFloat) -> some View {
+        HStack(spacing: 4) {
+            if isUserCurrentLocation {
+                Image(systemName: "location.fill")
+                    .font(.system(size: locationSize, weight: .semibold))
+                    .foregroundStyle(titleColor)
+            }
+
+            Text(city.displayName)
+                .font(.system(size: fontSize, weight: .semibold))
+                .tracking(-0.42)
+                .foregroundStyle(titleColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+    }
+
+    private func dayNightIcon(size: CGFloat, weight: Font.Weight) -> some View {
+        Image(systemName: dayNightSymbol)
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(secondaryTextColor)
     }
 }
