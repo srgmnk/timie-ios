@@ -1,9 +1,25 @@
 import Foundation
 import SwiftUI
 import Combine
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 @MainActor
 final class CityStore: ObservableObject {
+    private struct WidgetCityRecord: Codable {
+        let id: String
+        let canonicalName: String
+        let customDisplayName: String?
+        let timeZoneIdentifier: String
+    }
+
+    private enum WidgetSharedStorage {
+        static let appGroupIdentifier = "group.ai.srgmnk.hours"
+        static let citiesKey = "widget.savedCities"
+        static let citiesFileName = "widget-saved-cities.json"
+    }
+
     @Published var cities: [City] = [] {
         didSet {
             guard !isLoading else { return }
@@ -35,18 +51,21 @@ final class CityStore: ObservableObject {
             try ensureParentDirectoryExists()
             guard fileManager.fileExists(atPath: citiesFileURL.path) else {
                 cities = []
+                syncWidgetSharedCities()
                 return
             }
             let data = try Data(contentsOf: citiesFileURL)
             let decoded = try JSONDecoder().decode([City].self, from: data)
             let migration = migrateCanonicalIdentitiesIfNeeded(decoded)
             cities = migration.cities
+            syncWidgetSharedCities()
             if migration.didMigrate {
                 save()
             }
         } catch {
             log("Failed to load cities from \(citiesFileURL.path). Error: \(error)")
             cities = []
+            syncWidgetSharedCities()
         }
     }
 
@@ -59,6 +78,7 @@ final class CityStore: ObservableObject {
             #endif
             let data = try encoder.encode(cities)
             try data.write(to: citiesFileURL, options: [.atomic])
+            syncWidgetSharedCities()
         } catch {
             log("Failed to save cities to \(citiesFileURL.path). Error: \(error)")
         }
@@ -146,5 +166,46 @@ final class CityStore: ObservableObject {
         #if DEBUG
         print("[CityStore] \(message)")
         #endif
+    }
+
+    private func syncWidgetSharedCities() {
+        let sharedCities = cities.map {
+            WidgetCityRecord(
+                id: $0.id,
+                canonicalName: $0.name,
+                customDisplayName: $0.customDisplayName,
+                timeZoneIdentifier: $0.timeZoneID
+            )
+        }
+
+        do {
+            let encoder = JSONEncoder()
+            #if DEBUG
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            #endif
+            let data = try encoder.encode(sharedCities)
+            if let sharedDirectoryURL = fileManager.containerURL(
+                forSecurityApplicationGroupIdentifier: WidgetSharedStorage.appGroupIdentifier
+            ) {
+                let sharedFileURL = sharedDirectoryURL.appendingPathComponent(
+                    WidgetSharedStorage.citiesFileName,
+                    isDirectory: false
+                )
+                try data.write(to: sharedFileURL, options: [.atomic])
+            } else {
+                log("Failed to open shared container for app group \(WidgetSharedStorage.appGroupIdentifier)")
+            }
+
+            if let sharedDefaults = UserDefaults(suiteName: WidgetSharedStorage.appGroupIdentifier) {
+                sharedDefaults.set(data, forKey: WidgetSharedStorage.citiesKey)
+            } else {
+                log("Failed to open shared defaults for app group \(WidgetSharedStorage.appGroupIdentifier)")
+            }
+            #if canImport(WidgetKit)
+            WidgetCenter.shared.reloadAllTimelines()
+            #endif
+        } catch {
+            log("Failed to mirror cities to shared defaults. Error: \(error)")
+        }
     }
 }

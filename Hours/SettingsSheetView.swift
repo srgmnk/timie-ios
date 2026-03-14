@@ -181,7 +181,7 @@ struct SettingsSheetView: View {
 
     private var cityViewRow: some View {
         HStack(spacing: 16) {
-            Text("City view")
+            Text("City View")
                 .font(.system(size: 16, weight: .regular))
                 .tracking(-0.48)
                 .foregroundStyle(theme.textPrimary)
@@ -235,7 +235,7 @@ struct SettingsSheetView: View {
 
     private var timeFormatRow: some View {
         HStack(spacing: 16) {
-            Text("Time format")
+            Text("Time Format")
                 .font(.system(size: 16, weight: .regular))
                 .tracking(-0.48)
                 .foregroundStyle(theme.textPrimary)

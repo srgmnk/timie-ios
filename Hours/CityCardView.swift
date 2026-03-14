@@ -264,7 +264,7 @@ struct CityCardView: View {
 
                     Image(systemName: deltaSymbolName)
                         .font(.system(size: 12, weight: .regular))
-                        .offset(y: -1)
+                        .offset(y: -0.5)
                 }
             }
         }
